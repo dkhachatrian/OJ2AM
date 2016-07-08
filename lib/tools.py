@@ -14,6 +14,7 @@ from collections import defaultdict
 
 vals_dict = {'ori': 0, 'coh': 1, 'ener': 2} #maps labels to elements in array
 
+discriminant_dist_sq = 3
 
 #######################################
 #### Node/Graph-Related Functions #####
@@ -41,7 +42,25 @@ class Graph: #bidirectional
         self.edges[b].append(a) #bidirectional
         self.costs[(a,b)] = cost
         self.costs[(b,a)] = cost
-        
+    
+    # establishing connections for our anisotropy graph is simple -- we use adjacent arrays of data
+    def make_connections(self): # O(n**2)...
+        for from_node in self.nodes:
+            for to_node in self.nodes:
+                if not self.is_connected(from_node, to_node) and self.should_be_connected(from_node, to_node):
+                    self.add_edge(from_node, to_node, cost = cost(from_node, to_node))
+            
+    def is_connected(self,a,b):
+        try:
+            self.costs[(a,b)] #does an entry for its cost exist?
+            return True
+        except KeyError: #no associated cost --> not connected
+            return False
+            
+    def should_be_connected(self, a, b):
+        distance_sq = sum((t-f)**2 for t,f in zip(a.coords, b.coords))
+        return (distance_sq < discriminant_dist_sq)
+                    
 
 
 def cost(a,b):
@@ -56,6 +75,58 @@ def cost(a,b):
     return (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy)
     
 
+def optimize_path(graph, start, end):
+    """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node's coordinates (start) to the target Node's coordinates (end) (using Dijsktra's algorithm).
+    Will yield the coordinates traversed from start to end."""
+ 
+    epsilon = 0 # '0' may be changed to some epsilon, to be less ensitive to noise in data
+ 
+    remaining_nodes = graph.nodes() #all unsettled nodes, visited or nonvisited
+    unsettled = {} #visited and unsettled
+    settled = {start: 0} #0 cost to get from start to start
+    remaining_nodes.remove(start)
+    
+    yield start.coords #start-point
+    
+    current_node = start    
+    
+    while remaining_nodes:
+        #update vavlues for nodes adjacent to current node
+        for adj_node in graph.edges[current_node]:
+            if adj_node in settled:
+                continue
+            edge = graph.costs[(current_node, adj_node)]
+            if adj_node not in unsettled:
+                unsettled[adj_node] = edge
+            else:
+                new_cost = settled[current_node] + edge
+                if new_cost < unsettled[adj_node]:
+                    unsettled[adj_node] = new_cost
+        #settle nodes
+        m = min(unsettled.values())
+        #TODO: what if multiple settle at once? How to decide which way to go a priori?
+            # recursion that compares costs from bifurcating points to target?
+        
+        newly_settled = []
+        for node in unsettled:
+            if unsettled[node] <= m + epsilon: 
+                settled[node] = unsettled[node] #add to settled dict (with cost as value)
+                remaining_nodes.remove(node) #remove node from remaining_nodes
+                newly_settled.append(node)
+                
+        if len(newly_settled) > 1:
+            pass #TODO: figure out what we're doing
+            # most likely have to perform recursion on each of the newly settled Nodes, to figure out which to yield for the path from start-to-end
+            # but watch out for it bouncing back-and-forth between bifurcation fork and tine
+            # simple cop-out is "just take the first Node and roll with it". But may not actually be true...
+        elif len(newly_settled) == 1:
+            node = newly_settled[0]
+            yield node.coords
+            
+            if node == end: #reached the goal!
+                return settled #returns dict of settled Nodes and their costs
+        
+        
 
 
 
@@ -69,8 +140,9 @@ def cost(a,b):
 
 
 
-
-
+#####################################
+#### UI.Image-Related Functions #####
+#####################################
 
 
 

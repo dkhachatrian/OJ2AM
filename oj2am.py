@@ -44,16 +44,23 @@ im_data = im_data / 255 #normalized to [0,1] interval for all values
 cost_function = t.ori_cost
 
 
+# build graph
+
 aniso_map = t.Graph()
 
 ind = np.ndindex(im_data.shape[:-1]) #allows loops over all but the last dimension (see below)
 
-# build graph
+#add Nodes
 
 for i in ind:
     node = t.Node(im_data(i), *i) # (*i) "unpacks" the tuple into individual values to pass in as arguments
-    t.aniso_map.add_node(node)
+    aniso_map.add_node(node)
     
+
+# establish edges
+
+aniso_map.make_connections()
+
 
 
 start_coord = (2,3) #(x,y) coordinate
