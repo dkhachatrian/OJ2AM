@@ -76,10 +76,13 @@ def cost(a,b):
     
 
 def optimize_path(graph, start, end):
-    """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node's coordinates (start) to the target Node's coordinates (end) (using Dijsktra's algorithm).
-    Will yield the coordinates traversed from start to end."""
+    """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node (start) to the target Node (end) (using Dijsktra's algorithm).
+    Will yield the coordinates (one of Node's member variables, corresponding to its location in the original dataset) traversed from start to end.
+    Will return a dictionary of all Nodes that were settled while getting from start to end, with keys being the Nodes and values being their costs.
+    Note: this function does *not* explicitly determine the optimal costs to reach every Node! It stops once it reaches the 'end' Node."""
  
-    epsilon = 0 # '0' may be changed to some epsilon, to be less ensitive to noise in data
+    epsilon = 0 # '0' may be changed to some epsilon, to be less sensitive to noise in data (or less-than-perfect cost functions)
+    
  
     remaining_nodes = graph.nodes() #all unsettled nodes, visited or nonvisited
     unsettled = {} #visited and unsettled
@@ -91,7 +94,7 @@ def optimize_path(graph, start, end):
     current_node = start    
     
     while remaining_nodes:
-        #update vavlues for nodes adjacent to current node
+        #update values for nodes adjacent to current node
         for adj_node in graph.edges[current_node]:
             if adj_node in settled:
                 continue
@@ -109,28 +112,34 @@ def optimize_path(graph, start, end):
         
         newly_settled = []
         for node in unsettled:
-            if unsettled[node] <= m + epsilon: 
+            if unsettled[node] <= m + epsilon: #if cost is the lowest among unsettled nodes, should be settled
                 settled[node] = unsettled[node] #add to settled dict (with cost as value)
                 remaining_nodes.remove(node) #remove node from remaining_nodes
-                newly_settled.append(node)
+                newly_settled.append(node) #checking to see if more than one Node settles at once...
                 
         if len(newly_settled) > 1:
-            pass #TODO: figure out what we're doing
+            graph_results = defaultdict(list)
+            for tine in newly_settled:
+                graph_results[optimize_path(graph, newly_settled, end)[end]].append(newly_settled) # key == the cost to get to the end from the newly settled node. value == the newly settled node. So we can find the min amongst the keys, and choose the corresponding node
+            if len(graph_results[min(graph_results)]) > 1:
+                pass #equal likelihood of choosing either path
+            
+            #find lowest-cost one
+            
+            #pass #TODO: figure out what we're doing
             # most likely have to perform recursion on each of the newly settled Nodes, to figure out which to yield for the path from start-to-end
             # but watch out for it bouncing back-and-forth between bifurcation fork and tine
             # simple cop-out is "just take the first Node and roll with it". But may not actually be true...
-        elif len(newly_settled) == 1:
-            node = newly_settled[0]
-            yield node.coords
             
-            if node == end: #reached the goal!
+        elif len(newly_settled) >= 1: #just taking the first in the list
+            current_node = newly_settled[0]
+            yield current_node.coords
+            
+            if current_node == end: #reached the goal!
                 return settled #returns dict of settled Nodes and their costs
         
+            #otherwise we haven't. Continues to iterate
         
-
-
-
-
 
 
 
