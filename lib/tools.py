@@ -11,6 +11,7 @@ from PIL import Image
 from matplotlib import colors
 import numpy as np
 from collections import defaultdict
+import math
 
 vals_dict = {'ori': 0, 'coh': 1, 'ener': 2} #maps labels to elements in array
 
@@ -27,6 +28,28 @@ class Node: # Node will be
         self.orientation = data[0]
         self.coherence = data[1]
         self.energy = data[2]
+    
+    def info(self):
+        print("Coords: " + str(self.coords))
+        print("Orientation: " + str(self.orientation))
+        print("Coherence: " + str(self.coherence))
+        print("Energy: " + str(self.energy))
+
+    #for comparisons of attributes
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+        
+    def __key(self):
+        return (self.coords, self.orientation, self.coherence, self.energy)
+
+    def __hash__(self):
+        return hash(self.__key())
 
 class Graph: #bidirectional
     def __init__(self):
@@ -47,7 +70,7 @@ class Graph: #bidirectional
     def make_connections(self): # O(n**2)...
         for from_node in self.nodes:
             for to_node in self.nodes:
-                if not self.is_connected(from_node, to_node) and self.should_be_connected(from_node, to_node):
+                if self.should_be_connected(from_node, to_node) and not self.is_connected(from_node, to_node):
                     self.add_edge(from_node, to_node, cost = cost(from_node, to_node))
             
     def is_connected(self,a,b):
@@ -62,6 +85,9 @@ class Graph: #bidirectional
         return (distance_sq < discriminant_dist_sq)
                     
 
+def make_node(im_data, x, y, z = 0):
+    return Node(im_data[y,x], x, y)
+
 
 def cost(a,b):
     """ Given two adjacent Nodes, calculate the weight (determined by relative anisotropies, coherences, and energies). """
@@ -72,10 +98,18 @@ def cost(a,b):
     #dtheta = abs(b[vals_dict['ori']] - a[vals_dict['ori']]) #change in angle
     #thought process is that traversal along similar orientation is less costly
     
-    return (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy)
+    if a.energy + b.energy > 0:
+        result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy)
+    else:
+        result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
+        
+    if math.isnan(result):
+        print('Got NaN as a cost! Welp...')
+    else:
+        return result
     
 
-def optimize_path(graph, start, end):
+def optimize_path(graph, start, end, orig_data):
     """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node (start) to the target Node (end) (using Dijsktra's algorithm).
     Will yield the coordinates (one of Node's member variables, corresponding to its location in the original dataset) traversed from start to end.
     Will return a dictionary of all Nodes that were settled while getting from start to end, with keys being the Nodes and values being their costs.
@@ -84,21 +118,27 @@ def optimize_path(graph, start, end):
     epsilon = 0 # '0' may be changed to some epsilon, to be less sensitive to noise in data (or less-than-perfect cost functions)
     
  
-    remaining_nodes = graph.nodes() #all unsettled nodes, visited or nonvisited
-    unsettled = {} #visited and unsettled
+#    remaining_nodes = graph.nodes #all unsettled nodes, visited or nonvisited
+    unsettled = {start: 0} #visited and unsettled
     settled = {start: 0} #0 cost to get from start to start
-    remaining_nodes.remove(start)
+#    remaining_nodes.remove(start)
     
     yield start.coords #start-point
     
     current_node = start    
     
-    while remaining_nodes:
+    while unsettled:
         #update values for nodes adjacent to current node
         for adj_node in graph.edges[current_node]:
             if adj_node in settled:
+                if adj_node in unsettled:
+                    unsettled.pop(adj_node)
                 continue
             edge = graph.costs[(current_node, adj_node)]
+            
+            if math.isnan(edge):
+                print('Got NaN as a cost! Welp...')            
+            
             if adj_node not in unsettled:
                 unsettled[adj_node] = edge
             else:
@@ -110,19 +150,35 @@ def optimize_path(graph, start, end):
         #TODO: what if multiple settle at once? How to decide which way to go a priori?
             # recursion that compares costs from bifurcating points to target?
         
-        newly_settled = []
-        for node in unsettled:
-            if unsettled[node] <= m + epsilon: #if cost is the lowest among unsettled nodes, should be settled
-                settled[node] = unsettled[node] #add to settled dict (with cost as value)
-                remaining_nodes.remove(node) #remove node from remaining_nodes
-                newly_settled.append(node) #checking to see if more than one Node settles at once...
-                
+        #newly_settled = []
+
+        newly_settled = [node for node in unsettled if unsettled[node] <= (m + epsilon)]        
+#        
+#        for node in unsettled:
+#            if unsettled[node] <= m + epsilon: #if cost is the lowest among unsettled nodes, should be settled
+#                settled[node] = unsettled[node] #add to settled dict (with cost as value)
+#                #remaining_nodes.remove(node) #remove node from remaining_nodes
+#                newly_settled.append(node) #checking to see if more than one Node settles at once...
+        for node in newly_settled:
+            settled[node] = unsettled[node]
+            unsettled.pop(node) #remove newly settled Nodes from the unsettled ones
+           
+           
+        # dealing with bifurcations. Uses recursion... (makes things take longer)           
+           
         if len(newly_settled) > 1:
-            graph_results = defaultdict(list)
-            for tine in newly_settled:
-                graph_results[optimize_path(graph, newly_settled, end)[end]].append(newly_settled) # key == the cost to get to the end from the newly settled node. value == the newly settled node. So we can find the min amongst the keys, and choose the corresponding node
-            if len(graph_results[min(graph_results)]) > 1:
-                pass #equal likelihood of choosing either path
+            pass #will test later
+#            graph_results = defaultdict(list)
+#            for tine in newly_settled:
+#                forked_gen = optimize_path(graph, tine, end, orig_data)
+#                consumed = consume(forked_gen)
+#                fork_cost = consumed[-1][end] #last object generated is dict of Node-->value
+#                graph_results[fork_cost].append(tine) # key == the cost to get to the end from the newly settled node. value == the newly settled node. So we can find the min amongst the keys, and choose the corresponding node
+#            if len(graph_results[min(graph_results)]) > 1:
+#                pass #equal likelihood of choosing either path
+#            
+#            
+            
             
             #find lowest-cost one
             
@@ -136,13 +192,22 @@ def optimize_path(graph, start, end):
             yield current_node.coords
             
             if current_node == end: #reached the goal!
-                return settled #returns dict of settled Nodes and their costs
+                yield settled
+                return #hopefully there's a less ugly way of doing this...
+                #return settled #returns dict of settled Nodes and their costs
         
             #otherwise we haven't. Continues to iterate
         
 
 
-
+def consume(generator):
+    """ Consume generator, appending all yielded and returned values into a list. Returns the list. """
+    results = []
+    while True:
+        try:
+            results.append(next(generator))
+        except StopIteration:
+            return results
 
 
 
