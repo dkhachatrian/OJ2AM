@@ -28,6 +28,9 @@ from lib import tools as t
 
 import pickle #save/cache Graphs made from images
 
+from matplotlib import pyplot as plt # plot distributions
+
+
 
 np.set_printoptions(precision=2, suppress = True) #for easier-to-look-at numbbers when printing in pdb
 
@@ -120,6 +123,13 @@ while True:
 
 path_dict = path_list[-1] #last thing path_generator sends is the dict
 path_list.pop() #pop_list now has, in order, the optimal coordinates to be traveled
+
+#dump data
+with open(os.path.join(outdir, 'path_dict.p'), 'wb') as outf:
+    pickle.dump(path_dict, outf, pickle.HIGHEST_PROTOCOL)
+with open(os.path.join(outdir, 'path_list.p'), 'wb') as outf:
+    pickle.dump(path_list, outf, pickle.HIGHEST_PROTOCOL)
+
 
 black = [0,0,0]
 white = [1,1,1] #RGB value for black pixels. Will be used to mark the optimal path on the original image
