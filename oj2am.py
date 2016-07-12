@@ -110,25 +110,37 @@ start_node = t.Node(im_data[tuple(reversed(start_coord))], *start_coord)
 end_coord = (20,14)
 end_node = t.Node(im_data[tuple(reversed(end_coord))], *end_coord)
 
-# pathfinding algorithm
-path_generator = t.optimize_path(graph = aniso_map, start = start_node, end = end_node, orig_data = im_data)
-path_list = []
 
-
-while True:
-    try:
-        path_list.append(next(path_generator))
-    except StopIteration:
-        break
-
-path_dict = path_list[-1] #last thing path_generator sends is the dict
-path_list.pop() #pop_list now has, in order, the optimal coordinates to be traveled
+paths_info, preds = t.Dijkstra(aniso_map, start_node)
+path_list = t.optimal_path(preds, start_node, end_node)
 
 #dump data
-with open(os.path.join(outdir, 'path_dict.p'), 'wb') as outf:
-    pickle.dump(path_dict, outf, pickle.HIGHEST_PROTOCOL)
+with open(os.path.join(outdir, 'paths_info.p'), 'wb') as outf:
+    pickle.dump(paths_info, outf, pickle.HIGHEST_PROTOCOL)
 with open(os.path.join(outdir, 'path_list.p'), 'wb') as outf:
     pickle.dump(path_list, outf, pickle.HIGHEST_PROTOCOL)
+
+
+
+## pathfinding algorithm
+#path_generator = t.optimize_path(graph = aniso_map, start = start_node, end = end_node, orig_data = im_data)
+#path_list = []
+#
+#
+#while True:
+#    try:
+#        path_list.append(next(path_generator))
+#    except StopIteration:
+#        break
+#
+#path_dict = path_list[-1] #last thing path_generator sends is the dict
+#path_list.pop() #pop_list now has, in order, the optimal coordinates to be traveled
+#
+##dump data
+#with open(os.path.join(outdir, 'path_dict.p'), 'wb') as outf:
+#    pickle.dump(path_dict, outf, pickle.HIGHEST_PROTOCOL)
+#with open(os.path.join(outdir, 'path_list.p'), 'wb') as outf:
+#    pickle.dump(path_list, outf, pickle.HIGHEST_PROTOCOL)
 
 
 black = [0,0,0]
