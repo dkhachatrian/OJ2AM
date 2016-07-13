@@ -41,16 +41,24 @@ outdir = os.path.join(dname, 'outputs') #directory for output files
 
 # We shall assume the image's HSV values came in the order: orientation, coherence, energy
 
-im_name = 'fft-swirl-analyzed-rgb-cropped.jpg'
-im = Image.open(os.path.join(dep, im_name))
 
-outmap_fname = im_name + ' aniso_map.p' # 'p' for pickle file
+# ask for input data
 
+im_data = t.get_data(dep)
+
+out_prefix = input('Please designate a prefix for the files to be output:\n')
+
+
+
+#im_name = 'fft-swirl-analyzed-rgb-cropped.jpg'
+#im = Image.open(os.path.join(dep, im_name))
+#
+outmap_fname = out_prefix + ' aniso_map.p' # 'p' for pickle file
 outmap_path = os.path.join(outdir, outmap_fname)
-
-
-im_data = np.array(im)
-im_data = im_data / 255 #normalized to [0,1] interval for all values
+#
+#
+#im_data = np.array(im)
+#im_data = im_data / 255 #normalized to [0,1] interval for all values
 
 
 #used cached data if already processed
@@ -62,10 +70,10 @@ if os.path.lexists(outmap_path):
 
 else:
     #currently assuming the information is contained in the RGB layers
-    if im.mode != 'RGB':
-        print("Mode isn't RGB!")
-        
-    
+#    if im.mode != 'RGB':
+#        print("Mode isn't RGB!")
+#        
+#    
 
     
     # bands = t.get_bands(im)
@@ -106,12 +114,13 @@ else:
 
 start_coord = (2,3) #(x,y) coordinate
 start_node = t.Node(im_data[tuple(reversed(start_coord))], *start_coord)
+# TODO; use t.make_node
 
 end_coord = (20,14)
 end_node = t.Node(im_data[tuple(reversed(end_coord))], *end_coord)
 
 
-paths_info, preds = t.Dijkstra(aniso_map, start_node)
+paths_info, preds = t.Dijkstra(aniso_map, start_node, end_node)
 path_list = t.optimal_path(preds, start_node, end_node)
 
 #dump data
@@ -148,18 +157,20 @@ white = [1,1,1] #RGB value for black pixels. Will be used to mark the optimal pa
 
 #ind = np.ndindex(im_data.shape[:-1]) #allows loops over all but the last dimension (see below)
 
+out_im_data = np.ones(im_data.shape)
 
 #color in black the optimal path
 for index in path_list:
-    index = tuple(reversed(index[:-1])) #slicing due to this only being 2D
+    index = index[:-1] #slicing due to this only being 2D, 
+    index = tuple(reversed(index))
     index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
-    im_data[index] = black #slicing due to this only being 2D
+    out_im_data[index] = black #slicing due to this only being 2D
 
-#save as new image
-im_data = im_data * 255
-im_data = im_data.astype('uint8')
-out_im = Image.fromarray(im_data)
-out_imfname = im_name + ' with_optimized_path.jpg'
+#save as new image, could be used as mask or for an overlay
+out_im_data = (out_im_data * 255).astype('uint8')
+#out_im_data = out_im_data.astype('uint8')
+out_im = Image.fromarray(out_im_data)
+out_imfname = out_prefix + ' optimized_path.jpg'
 out_impath = os.path.join(outdir, out_imfname)
 out_im.save(out_impath)
 

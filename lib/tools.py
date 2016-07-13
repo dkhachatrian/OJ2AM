@@ -72,6 +72,7 @@ class Graph: #bidirectional
     # establishing connections for our anisotropy graph is simple -- we use adjacent arrays of data
     def make_connections(self): # O(n**2)...
         for from_node in self.nodes:
+            print('Making connections for Node with coordinates ' + str(from_node.coords) + '...')
             for to_node in self.nodes:
                 if self.should_be_connected(from_node, to_node) and not self.is_connected(from_node, to_node):
                     self.add_edge(from_node, to_node, cost = cost(from_node, to_node))
@@ -91,7 +92,15 @@ class Graph: #bidirectional
                     
 
 def make_node(im_data, x, y, z = 0):
-    return Node(im_data[y,x], x, y)
+    if im_data.ndim == 3: #last dimension is data
+        return Node(im_data[y,x], x, y)
+    elif im_data.ndim == 4:
+        return Node(im_data[z,y,x],x,y,z)
+
+
+def access_coords(coords, data):
+    """ Access coordinates in (x,y,z,...) format from a NumPy array. """
+    return data[tuple(reversed(coords))] #dimensions are accessed 'backwards'
 
 
 def cost(a,b):
@@ -115,7 +124,7 @@ def cost(a,b):
     
     
     
-def Dijkstra(graph, start):
+def Dijkstra(graph, start, end = None):
     """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node (start) to the target Node (end) (using Dijsktra's algorithm).
     Will yield the coordinates (one of Node's member variables, corresponding to its location in the original dataset) traversed from start to end.
     Will return:
@@ -161,10 +170,16 @@ def Dijkstra(graph, start):
             if len(newly_settled) > 1:
                 print('Bifurcation in optimal path.')
             settled[n] = v_unsettled[n] #v_settled[n] == min_v (at least, should be)
+
+            
             #pred[n] = current_node
             v_unsettled.pop(n) #remove from dictionary whose costs are compared to find new mins
             processing_queue.append(n) #add to queue of settled nodes whose neighbors should be updated
         
+        #get out if we reached a specified end Node.
+        # Note: if done this way, cannot arbitrarily choose any end Node afterward
+        if end in newly_settled:
+            break
         
     return settled, pred    
 
@@ -281,71 +296,102 @@ def optimal_path(results, start, end):
 #        
 
 
-def consume(generator):
-    """ Consume generator, appending all yielded and returned values into a list. Returns the list. """
-    results = []
-    while True:
-        try:
-            results.append(next(generator))
-        except StopIteration:
-            return results
+#def consume(generator):
+#    """ Consume generator, appending all yielded and returned values into a list. Returns the list. """
+#    results = []
+#    while True:
+#        try:
+#            results.append(next(generator))
+#        except StopIteration:
+#            return results
+#
 
 
 
 
 
-
-#####################################
-#### UI.Image-Related Functions #####
-#####################################
-
+#######################
+#### UI Functions #####
+#######################
 
 
-
-def get_image(dep):
-    """ Prompts user for name of image. (Pass in the location of the dependencies folder.) Returns open Image, and image name. """
-
-    image_name = input("Please state the full filename for the image of interest (located in the dependencies directory of this script), or enter nothing to quit: \n")
+def get_data(dep):
+    """
+    Prompts user for names of files corresponding to outputs of OrientationJ's parameters: orientation, coherence, and energy.
+    Input files are searched for in the script's dependencies folder.
+    Input files must haev been saved as a Text Image using ImageJ.
     
-#. To process all images in the dependencies direcctory as a z-stack, type 'all'
+    Returns a NumPy array of the data stacked such that the final axis has the data in order [orientation, coherence, energy].
+    """
+
+    print('Hello! Please place relevant files in the dependencies directory of this script. Please haev the files saved as a "Text Image" in ImageJ.')
     
-    while not os.path.isfile(os.path.join(dep, image_name)):
-        if image_name == '':
-            sys.exit()
-        image_name = input("File not found! Please check the spelling of the filename input. Re-enter filename (or enter no characters to quit): \n")
+    data_list = []
+    data_names = ['orientation', 'coherence', 'energy']    
+
+
     
-    im_orig = Image.open(os.path.join(dep, image_name))
 
-    return im_orig, image_name
+    while len(data_list) < 3:
+        file_name = input("Please state the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest, or enter nothing to quit: \n")        
+        while not os.path.isfile(os.path.join(dep, file_name)):
+            if file_name == '':
+                sys.exit()
+            file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
+        with open(os.path.join(dep, file_name), 'r') as inf:
+            data_list.append(np.loadtxt(inf, delimiter = '\t')) #delimiter for Text Images is tab
 
-def get_bands(image):
-    """ Pull out bands from image.
-    (We assume bands correspond to the order orientation, coherence, energy)"""
+    #stack arrays
+
+    data = np.stack(data_list, axis = -1) #axis = -1 makes data the last dimension
     
-    data = np.array(image)
-
-    data /= 255 #each of the values are on 8-bit scales. (They don't all necessarily reach 255)
-    
-    hsv = colors.rgb_to_hsv(data)
-    #bands = np.dsplit(hsv)
-    bands = []
-    
-    for band in np.dsplit(hsv, hsv.shape[-1]):
-        #bands.append(np.squeeze(band)) #have the 1-element arrays be scalars
-        bands.append(band)
-        
-    return bands
+    return data
 
 
-
-
-
-
-def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
-
+#def get_image(dep):
+#    """ Prompts user for name of image. (Pass in the location of the dependencies folder.) Returns open Image, and image name. """
+#
+#    image_name = input("Please state the full filename for the image of interest (located in the dependencies directory of this script), or enter nothing to quit: \n")
+#    
+##. To process all images in the dependencies direcctory as a z-stack, type 'all'
+#    
+#    while not os.path.isfile(os.path.join(dep, image_name)):
+#        if image_name == '':
+#            sys.exit()
+#        image_name = input("File not found! Please check the spelling of the filename input. Re-enter filename (or enter no characters to quit): \n")
+#    
+#    im_orig = Image.open(os.path.join(dep, image_name))
+#
+#    return im_orig, image_name
+#
+#def get_bands(image):
+#    """ Pull out bands from image.
+#    (We assume bands correspond to the order orientation, coherence, energy)"""
+#    
+#    data = np.array(image)
+#
+#    data /= 255 #each of the values are on 8-bit scales. (They don't all necessarily reach 255)
+#    
+#    hsv = colors.rgb_to_hsv(data)
+#    #bands = np.dsplit(hsv)
+#    bands = []
+#    
+#    for band in np.dsplit(hsv, hsv.shape[-1]):
+#        #bands.append(np.squeeze(band)) #have the 1-element arrays be scalars
+#        bands.append(band)
+#        
+#    return bands
+#
+#
+#
+#
+#
+#
+#def pairwise(iterable):
+#    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+#    a, b = itertools.tee(iterable)
+#    next(b, None)
+#    return zip(a, b)
+#
+#
 
