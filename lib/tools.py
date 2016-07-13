@@ -324,7 +324,7 @@ def get_data(dep):
     Returns a NumPy array of the data stacked such that the final axis has the data in order [orientation, coherence, energy].
     """
 
-    print('Hello! Please place relevant files in the dependencies directory of this script. Please haev the files saved as a "Text Image" in ImageJ.')
+    print('Hello! Please place relevant files in the dependencies directory of this script. Please have the files saved as a "Text Image" in ImageJ.')
     
     data_list = []
     data_names = ['orientation', 'coherence', 'energy']    
@@ -346,6 +346,22 @@ def get_data(dep):
     data = np.stack(data_list, axis = -1) #axis = -1 makes data the last dimension
     
     return data
+
+
+def overlay(fg, bg, mask = None):
+    """
+    Overlay two images, using a mask. The mask defaults to path_im converted to 'L' mode.
+    """
+    if mask is None:
+        mask = fg.convert('L')
+    
+    out_im = fg.copy()  
+    
+    out_im.paste(bg, (0, 0), mask) #this order because I elected to make the path black (==> 0 at path, 255 elsewhere)
+    return out_im
+    
+    
+
 
 
 #def get_image(dep):

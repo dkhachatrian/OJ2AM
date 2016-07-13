@@ -25,6 +25,7 @@ os.chdir(dname)
 import numpy as np
 from PIL import Image
 from lib import tools as t
+import sys
 
 import pickle #save/cache Graphs made from images
 
@@ -44,9 +45,20 @@ outdir = os.path.join(dname, 'outputs') #directory for output files
 
 # ask for input data
 
-im_data = t.get_data(dep)
+graph_data = t.get_data(dep)
 
-out_prefix = input('Please designate a prefix for the files to be output:\n')
+#out_prefix = input('Please designate a prefix for the files to be output:\n')
+
+# ask for original image. TODO: move to tools
+
+file_name = input("Please state the name of the file corresponding to the data in the previous input files, or enter nothing to quit: \n")        
+while not os.path.isfile(os.path.join(dep, file_name)):
+    if file_name == '':
+        sys.exit()
+    file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the original image being analyzed (or enter nothing to quit): \n")
+
+orig_im = Image.open(os.path.join(dep, file_name))
+out_prefix = file_name
 
 
 
@@ -57,8 +69,8 @@ outmap_fname = out_prefix + ' aniso_map.p' # 'p' for pickle file
 outmap_path = os.path.join(outdir, outmap_fname)
 #
 #
-#im_data = np.array(im)
-#im_data = im_data / 255 #normalized to [0,1] interval for all values
+#graph_data = np.array(im)
+#graph_data = graph_data / 255 #normalized to [0,1] interval for all values
 
 
 #used cached data if already processed
@@ -84,7 +96,7 @@ else:
     
     aniso_map = t.Graph()
     
-    ind = np.ndindex(im_data.shape[:-1]) #allows loops over all but the last dimension (see below)
+    ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
     
     #add Nodes
     j = 0
@@ -95,7 +107,7 @@ else:
             print('Have gone through another 1000 data points. Iteration count: ' + str(int(j/1000)))
         coords = tuple(reversed(i)) # numpy arrays are indexed e_k, e_(k-1), ..., e_1
         #print('Working on coordinates ' + str(coords) + '...')
-        node = t.Node(im_data[i], *coords) # (*coords) "unpacks" the iterable into individual values to pass in as arguments
+        node = t.Node(graph_data[i], *coords) # (*coords) "unpacks" the iterable into individual values to pass in as arguments
         aniso_map.add_node(node)
         
     # establish edges
@@ -113,11 +125,11 @@ else:
 # Test points
 
 start_coord = (2,3) #(x,y) coordinate
-start_node = t.Node(im_data[tuple(reversed(start_coord))], *start_coord)
+start_node = t.Node(graph_data[tuple(reversed(start_coord))], *start_coord)
 # TODO; use t.make_node
 
 end_coord = (20,14)
-end_node = t.Node(im_data[tuple(reversed(end_coord))], *end_coord)
+end_node = t.Node(graph_data[tuple(reversed(end_coord))], *end_coord)
 
 
 paths_info, preds = t.Dijkstra(aniso_map, start_node, end_node)
@@ -132,7 +144,7 @@ with open(os.path.join(outdir, 'path_list.p'), 'wb') as outf:
 
 
 ## pathfinding algorithm
-#path_generator = t.optimize_path(graph = aniso_map, start = start_node, end = end_node, orig_data = im_data)
+#path_generator = t.optimize_path(graph = aniso_map, start = start_node, end = end_node, orig_data = graph_data)
 #path_list = []
 #
 #
@@ -155,24 +167,39 @@ with open(os.path.join(outdir, 'path_list.p'), 'wb') as outf:
 black = [0,0,0]
 white = [1,1,1] #RGB value for black pixels. Will be used to mark the optimal path on the original image
 
-#ind = np.ndindex(im_data.shape[:-1]) #allows loops over all but the last dimension (see below)
+#ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
 
-out_im_data = np.ones(im_data.shape)
+path_im_data = np.ones(graph_data.shape)
 
 #color in black the optimal path
 for index in path_list:
     index = index[:-1] #slicing due to this only being 2D, 
     index = tuple(reversed(index))
     index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
-    out_im_data[index] = black #slicing due to this only being 2D
+    path_im_data[index] = black #slicing due to this only being 2D
 
 #save as new image, could be used as mask or for an overlay
-out_im_data = (out_im_data * 255).astype('uint8')
-#out_im_data = out_im_data.astype('uint8')
-out_im = Image.fromarray(out_im_data)
-out_imfname = out_prefix + ' optimized_path.jpg'
-out_impath = os.path.join(outdir, out_imfname)
-out_im.save(out_impath)
+path_im_data = (path_im_data * 255).astype('uint8')
+#path_im_data = path_im_data.astype('uint8')
+path_im = Image.fromarray(path_im_data)
+
+should_overlay = input('Would you like the optimized path to be overlaid over the original image? (Y/N):\n')
+if should_overlay.lower() == 'y':
+    overlaid = t.overlay(fg = path_im, bg = orig_im)
+    path_im_fname = out_prefix + ' overlay.jpg'
+    path_im_path = os.path.join(outdir, path_im_fname)
+    overlaid.save(path_im_path)
+
+
+save_path_separately = input('Would you like the optimized path to be saved separetely as a grayscale image? (Y/N):\n')
+if save_path_separately.lower() == 'y':
+    
+    path_im_fname = out_prefix + ' optimized_path.jpg'
+    path_im_path = os.path.join(outdir, path_im_fname)
+    path_im.save(path_im_path)
+
+
+
 
 
 print('Done!')
