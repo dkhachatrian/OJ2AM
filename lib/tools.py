@@ -54,6 +54,12 @@ class Node: # Node will be
     def __hash__(self):
         return hash(self.__key())
 
+
+
+
+
+
+
 class Graph: #bidirectional
     def __init__(self):
         self.nodes = set()
@@ -74,7 +80,7 @@ class Graph: #bidirectional
         for from_node in self.nodes:
             print('Making connections for Node with coordinates ' + str(from_node.coords) + '...')
             for to_node in self.nodes:
-                if self.should_be_connected(from_node, to_node) and not self.is_connected(from_node, to_node):
+                if should_be_connected(from_node, to_node) and not self.is_connected(from_node, to_node):
                     self.add_edge(from_node, to_node, cost = cost(from_node, to_node))
             
     def is_connected(self,a,b):
@@ -84,11 +90,11 @@ class Graph: #bidirectional
         except KeyError: #no associated cost --> not connected
             return False
             
-    def should_be_connected(self, a, b):
-        if a == b:
-            return False #no need to be connected with oneself...
-        distance_sq = sum((t-f)**2 for t,f in zip(a.coords, b.coords))
-        return (distance_sq < discriminant_dist_sq)
+def should_be_connected(self, a, b):
+    if a == b:
+        return False #no need to be connected with oneself...
+    distance_sq = sum((t-f)**2 for t,f in zip(a.coords, b.coords))
+    return (distance_sq < discriminant_dist_sq)
                     
 
 def make_node(im_data, x, y, z = 0):
@@ -339,7 +345,8 @@ def get_data(dep):
                 sys.exit()
             file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
         with open(os.path.join(dep, file_name), 'r') as inf:
-            data_list.append(np.loadtxt(inf, delimiter = '\t')) #delimiter for Text Images is tab
+            d_layer = np.loadtxt(inf, delimiter = '\t')
+            data_list.append(d_layer) #delimiter for Text Images is tab
 
     #stack arrays
 

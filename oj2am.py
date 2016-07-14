@@ -25,6 +25,7 @@ os.chdir(dname)
 import numpy as np
 from PIL import Image
 from lib import tools as t
+from lib import Graph as G
 import sys
 
 import pickle #save/cache Graphs made from images
@@ -75,8 +76,9 @@ outmap_path = os.path.join(outdir, outmap_fname)
 
 #used cached data if already processed
 if os.path.lexists(outmap_path):
-    with open(outmap_path, 'rb') as inf:
-        aniso_map = pickle.load(inf)
+    aniso_map = G.Graph(graph_data)      
+#    with open(outmap_path, 'rb') as inf:
+#        aniso_map = pickle.load(inf)
         
 #otherwise make Graph from scratch:
 
@@ -94,25 +96,30 @@ else:
     
     # build graph
     
-    aniso_map = t.Graph()
+    aniso_map = G.Graph(graph_data)    
     
-    ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
     
-    #add Nodes
-    j = 0
     
-    for i in ind:
-        j += 1
-        if j % 1000 == 0:
-            print('Have gone through another 1000 data points. Iteration count: ' + str(int(j/1000)))
-        coords = tuple(reversed(i)) # numpy arrays are indexed e_k, e_(k-1), ..., e_1
-        #print('Working on coordinates ' + str(coords) + '...')
-        node = t.Node(graph_data[i], *coords) # (*coords) "unpacks" the iterable into individual values to pass in as arguments
-        aniso_map.add_node(node)
-        
-    # establish edges
-    aniso_map.make_connections()
-    
+    # Below uses the "generic" implemetation of Graph. Runs slow -- O(n**2)
+#    aniso_map = t.Graph()
+#    
+#    ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
+#    
+#    #add Nodes
+#    j = 0
+#    
+#    for i in ind:
+#        j += 1
+#        if j % 1000 == 0:
+#            print('Have gone through another 1000 data points. Iteration count: ' + str(int(j/1000)))
+#        coords = tuple(reversed(i)) # numpy arrays are indexed e_k, e_(k-1), ..., e_1
+#        #print('Working on coordinates ' + str(coords) + '...')
+#        node = t.Node(graph_data[i], *coords) # (*coords) "unpacks" the iterable into individual values to pass in as arguments
+#        aniso_map.add_node(node)
+#        
+#    # establish edges
+#    aniso_map.make_connections()
+#    
     
     #save maps made of particular images
     
@@ -124,12 +131,12 @@ else:
 
 # Test points
 
-start_coord = (2,3) #(x,y) coordinate
-start_node = t.Node(graph_data[tuple(reversed(start_coord))], *start_coord)
+start_coord = (2,3,0) #(x,y) coordinate
+start_node = aniso_map.coord2node[start_coord]
 # TODO; use t.make_node
 
-end_coord = (20,14)
-end_node = t.Node(graph_data[tuple(reversed(end_coord))], *end_coord)
+end_coord = (20,14,0)
+end_node = aniso_map.coord2node[end_coord]
 
 
 paths_info, preds = t.Dijkstra(aniso_map, start_node, end_node)
