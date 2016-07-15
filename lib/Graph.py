@@ -15,6 +15,9 @@ import numpy as np
 from collections import defaultdict
 import math
 
+
+from collections import deque
+
 discriminant_dist = 2
 
 
@@ -222,4 +225,97 @@ def cost(a,b):
         print('Got NaN as a cost! Welp...')
     else:
         return result
+
+
+
+
+
+###############################################
+### Dijkstra's Algorithm and Pathfinding ######
+###############################################
+
+
+def Dijkstra(graph, start, end = None):
+    """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node (start) to the target Node (end) (using Dijsktra's algorithm).
+    Will yield the coordinates (one of Node's member variables, corresponding to its location in the original dataset) traversed from start to end.
+    Will return:
+        settled: a dictionary such that settled[settled_node] = (optimal_cost, node_traversed_just_prior_to_reaching_settled_node)
+        predecessors: a ditionary"""
+ 
+ 
+    total_nodes = len(graph.nodes)
+    settled = {start: 0}
+    v_unsettled = {} #visited but unsettled Nodes
+    pred = {start.coords: None} #dictionary of predecessors
+    processing_queue = deque([start])
     
+    while len(settled) < total_nodes:
+        while len(v_unsettled) == 0:
+            try:
+                current_node = processing_queue.popleft()
+            except IndexError:
+                print('Processing_queue was empty!')
+                
+            current_min_cost = settled[current_node]
+            
+            #update Nodes with potentially new lower min costs
+            for node in graph.edges[current_node]:
+                additional_cost = graph.costs[(current_node, node)]
+                new_cost = current_min_cost + additional_cost
+                if node not in settled:
+                    if node not in v_unsettled: #first visit of Node
+                        v_unsettled[node] = new_cost
+                        pred[node.coords] = current_node.coords
+                    else: #update cost if lower
+                        if new_cost < v_unsettled[node]:
+                            v_unsettled[node] = new_cost
+                            pred[node.coords] = current_node.coords
+            
+#        if len(v_unsettled) == 0:
+#            break #nothing left visited but unsettled!
+        
+        #find any newly settled Nodes
+        min_v = min(v_unsettled.values())
+        newly_settled = [n for n in v_unsettled if v_unsettled[n] == min_v]
+        
+        for n in newly_settled:
+            if len(newly_settled) > 1:
+                print('Bifurcation in optimal path.')
+            settled[n] = v_unsettled[n] #v_settled[n] == min_v (at least, should be)
+
+            
+            #pred[n] = current_node
+            v_unsettled.pop(n) #remove from dictionary whose costs are compared to find new mins
+            processing_queue.append(n) #add to queue of settled nodes whose neighbors should be updated
+        
+        #get out if we reached a specified end Node.
+        # Note: if done this way, cannot arbitrarily choose any end Node afterward
+        if end in newly_settled:
+            break
+        
+    return settled, pred    
+
+
+
+
+def optimal_path(results, start, end):
+    """ Using the results of Dijkstra's algorithm, construct the optimal path from the start and end coordinates. """
+    
+    #results = Dijkstra(graph,start,end)
+    
+    cur = end
+    path = []
+    
+    while cur is not None: # in algorithm, the predecessor of start is None
+        path.append(cur)
+        cur = results[cur]
+    
+    return list(reversed(path)) #to go from S->E instead of E->S
+    
+    
+    
+
+
+
+
+
