@@ -61,11 +61,13 @@ class Node: # Node will be
 
  #bidirectional. Due to simplicity in determining adjacency, edges are "hardwired" and requires the original NumPy array of data to initialize (in O(n) time)
 class Graph:
-    def __init__(self, data):
+    def __init__(self):
         self.nodes = set()
         self.edges = defaultdict(list) #key = from_node, values = to_node(s)
         self.costs = {}
         self.coord2node = {}
+    
+    def populate(self, data):
         self.create_adjacency_matrix(data)
 
     def add_node(self, n):
