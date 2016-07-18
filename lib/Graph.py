@@ -280,8 +280,8 @@ def Dijkstra(graph, start, end = None):
         newly_settled = [n for n in v_unsettled if v_unsettled[n] == min_v]
         
         for n in newly_settled:
-            if len(newly_settled) > 1:
-                print('Bifurcation in optimal path.')
+#            if len(newly_settled) > 1:
+#                print('Bifurcation in optimal path.')
             settled[n] = v_unsettled[n] #v_settled[n] == min_v (at least, should be)
 
             

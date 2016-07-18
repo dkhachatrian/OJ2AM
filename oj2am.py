@@ -72,17 +72,17 @@ for fname in os.listdir(g.cache_dir):
                     if str(coord) in fname:
                 #        if 'aniso_map' in fname:
                 #            aniso_map = pickle.load(fname)
-                        if 'paths_info' in fname:
+                        if not paths_info_loaded and 'paths_info' in fname:
                             paths_info = pickle.load(inf)
                             paths_info_loaded = True
-                        if 'preds' in fname:
+                        if not preds_loaded and 'preds' in fname:
                             preds = pickle.load(inf)
                             preds_loaded = True
             elif str(g.start_coord) in fname and str(g.end_coord) in fname: #specific route has already been asked for
-                if 'paths_info' in fname:
+                if not paths_info_loaded and 'paths_info' in fname:
                     paths_info = pickle.load(inf)
                     paths_info_loaded = True
-                if 'preds' in fname:
+                if not preds_loaded and 'preds' in fname:
                     preds = pickle.load(inf)
                     preds_loaded = True
 
@@ -192,9 +192,10 @@ if not specific_cache_loaded:
 #    finally: #can figure out the path to take
 #        path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
 
-path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
+
 
 if g.end_coord is not None:
+    path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
     t.draw_path_onto_image(orig_im.size, path_list)
 
 

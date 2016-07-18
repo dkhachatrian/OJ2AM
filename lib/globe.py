@@ -37,7 +37,8 @@ cache_dir = os.path.join(dname, 'cache')
 # harder test
 file_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 start_coord = (114,180,0)
-end_coord = (330,440,0)
+end_coord = None
+#end_coord = (330,440,0)
 
 orig_im = Image.open(os.path.join(dep, file_name))
 
@@ -58,7 +59,8 @@ out_prefix = file_name
 aniso_map_paths = []
 
 for coord in (start_coord, end_coord):
-    aniso_map_fname = '{0} initial={1} aniso_map.p'.format(out_prefix, coord)
+    aniso_map_fname = '{0} aniso_map.p'.format(out_prefix)    
+    #aniso_map_fname = '{0} initial={1} aniso_map.p'.format(out_prefix, coord)
     aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
     aniso_map_paths.append(aniso_map_path)
 
