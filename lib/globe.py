@@ -37,8 +37,8 @@ cache_dir = os.path.join(dname, 'cache')
 # harder test
 file_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 start_coord = (114,180,0)
-end_coord = None
-#end_coord = (330,440,0)
+#end_coord = None
+end_coord = (330,440,0)
 
 orig_im = Image.open(os.path.join(dep, file_name))
 

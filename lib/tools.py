@@ -93,7 +93,7 @@ def draw_path_onto_image(image_shape, path_list):
     #color in black the optimal path
     for index in path_list:
         index = index[:-1] #slicing due to this only being 2D; TODO: remove when using 3D
-        #index = tuple(reversed(index))
+        index = tuple(reversed(index))
         index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
         mask_data[index] = 0 #slicing due to this only being 2D
         path_im_data[index] = yellow
@@ -108,7 +108,7 @@ def draw_path_onto_image(image_shape, path_list):
     should_overlay = input('Would you like the optimized path to be overlaid over the original image? (Y/N):\n')
     if should_overlay.lower() == 'y':
         overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
-        path_im_fname = g.out_prefix + ' overlay.jpg'
+        path_im_fname = '{0} start={1} end={2} overlay.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         overlaid.save(path_im_path)
     
@@ -116,7 +116,7 @@ def draw_path_onto_image(image_shape, path_list):
     save_path_separately = input('Would you like the optimized path to be saved separetely as a grayscale image? (Y/N):\n')
     if save_path_separately.lower() == 'y':
         
-        path_im_fname = g.out_prefix + ' optimized_path.jpg'
+        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         path_im.save(path_im_path)
 

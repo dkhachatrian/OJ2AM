@@ -99,7 +99,7 @@ for fname in os.listdir(g.cache_dir):
 
 #create aniso_map
 #used cached map if already processed
-if not specific_cache_loaded:
+if not (paths_info_loaded and preds_loaded):
     for poss_path in g.aniso_map_paths:
         try:
             type(aniso_map)
@@ -194,7 +194,7 @@ if not specific_cache_loaded:
 
 
 
-if g.end_coord is not None:
+if (g.end_coord is not None and g.start_coord is not None):
     path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
     t.draw_path_onto_image(orig_im.size, path_list)
 
