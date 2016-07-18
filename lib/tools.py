@@ -84,9 +84,10 @@ def draw_path_onto_image(image_shape, path_list):
     
     black = [0,0,0]
     white = [1,1,1] #RGB value for black pixels. Will be used to mark the optimal path on the original image
+    yellow = [1,1,0]
     
     #ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
-    
+    mask_data = np.ones(tuple(reversed(image_shape)))
     path_im_data = np.ones((*reversed(image_shape),3)) #the '3' is for normalized RGB values at each pixel. Reversed because array dimensions in opposite order of image.shape tuple
     
     #color in black the optimal path
@@ -94,16 +95,19 @@ def draw_path_onto_image(image_shape, path_list):
         index = index[:-1] #slicing due to this only being 2D; TODO: remove when using 3D
         #index = tuple(reversed(index))
         index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
-        path_im_data[index] = black #slicing due to this only being 2D
+        mask_data[index] = 0 #slicing due to this only being 2D
+        path_im_data[index] = yellow
     
     #save as new image, could be used as mask or for an overlay
     path_im_data = (path_im_data * 255).astype('uint8')
+    mask_data = (mask_data*255).astype('uint8')
     #path_im_data = path_im_data.astype('uint8')
     path_im = Image.fromarray(path_im_data)
+    mask_im = Image.fromarray(mask_data)
     
     should_overlay = input('Would you like the optimized path to be overlaid over the original image? (Y/N):\n')
     if should_overlay.lower() == 'y':
-        overlaid = overlay(fg = path_im, bg = g.orig_im)
+        overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
         path_im_fname = g.out_prefix + ' overlay.jpg'
         path_im_path = os.path.join(g.outdir, path_im_fname)
         overlaid.save(path_im_path)

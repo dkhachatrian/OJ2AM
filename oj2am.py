@@ -29,6 +29,7 @@ from lib import tools as t
 from lib import Graph as G
 import sys
 import time
+import pdb
 
 import pickle #save/cache Graphs made from images
 
@@ -37,8 +38,6 @@ from matplotlib import pyplot as plt # plot distributions
 
 
 np.set_printoptions(precision=2, suppress = True) #for easier-to-look-at numbbers when printing in pdb
-
-
 
 
 
@@ -58,21 +57,35 @@ orig_im = Image.open(os.path.join(g.dep, g.file_name))
 
 # if there's 'full' information regarding the start or end coordinates, load that instead of creating graph
 
-cache_loaded = False
+specific_cache_loaded = False
+paths_info_loaded = False
+preds_loaded = False
 
 for fname in os.listdir(g.cache_dir):
-    if g.out_prefix in fname and str(None) in fname:
-        for coord in (g.start_coord, g.end_coord):
-            if str(coord) in fname:
-        #        if 'aniso_map' in fname:
-        #            aniso_map = pickle.load(fname)
+    if paths_info_loaded and preds_loaded:
+        specific_cache_loaded = True
+        break
+    with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
+        if g.out_prefix in fname:
+            if str(None) in fname: #general (given just a startpoint)
+                for coord in (g.start_coord, g.end_coord):
+                    if str(coord) in fname:
+                #        if 'aniso_map' in fname:
+                #            aniso_map = pickle.load(fname)
+                        if 'paths_info' in fname:
+                            paths_info = pickle.load(inf)
+                            paths_info_loaded = True
+                        if 'preds' in fname:
+                            preds = pickle.load(inf)
+                            preds_loaded = True
+            elif str(g.start_coord) in fname and str(g.end_coord) in fname: #specific route has already been asked for
                 if 'paths_info' in fname:
-                    paths_info = pickle.load(fname)
-                    cache_loaded = True
+                    paths_info = pickle.load(inf)
+                    paths_info_loaded = True
                 if 'preds' in fname:
-                    preds = pickle.load(fname)
-                    cache_loaded = True
-        
+                    preds = pickle.load(inf)
+                    preds_loaded = True
+
 
 
 #im_name = 'fft-swirl-analyzed-rgb-cropped.jpg'
@@ -84,42 +97,45 @@ for fname in os.listdir(g.cache_dir):
 
 #if there already exists a "full" map with
 
-
-
-#used cached data if already processed
-
-#if not cache_loaded:
-for poss_path in g.aniso_map_paths:
-    try:
-        type(aniso_map)
-        break
-    except NameError:
-        if os.path.lexists(poss_path): 
-            with open(poss_path, 'rb') as inf:
-                start = time.clock()
-                aniso_map = pickle.load(inf)
-                end = time.clock()
-                print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
-        
+#create aniso_map
+#used cached map if already processed
+if not specific_cache_loaded:
+    for poss_path in g.aniso_map_paths:
+        try:
+            type(aniso_map)
+            break
+        except NameError:
+            if os.path.lexists(poss_path): 
+                with open(poss_path, 'rb') as inf:
+                    start = time.clock()
+                    aniso_map = pickle.load(inf)
+                    end = time.clock()
+                    print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+            
 #otherwise make Graph from scratch:
 
-else:
-    # ask for input data
-    graph_data = t.get_data()
-    # build graph
-    
-    aniso_map = G.Graph()
-    aniso_map.populate(graph_data)    
-    
-
-    #save maps made of particular images
-    
-    with open(g.aniso_map_path, 'wb') as outf:
-        pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
-    
+    # see if map was loaded. If so, skip re-creation
+    try:
+        type(aniso_map)
+    except NameError: #still hasn't been created -- no general or specific cache. So make now
+        # ask for input data
+        graph_data = t.get_data()
+        # build graph
+        
+        aniso_map = G.Graph()
+        start = time.clock()
+        aniso_map.populate(graph_data)    
+        print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
     
     
-    # Below uses the "generic" implemetation of Graph. Runs slow -- O(n**2)
+        #save maps made of particular images
+        
+        with open(g.aniso_map_path, 'wb') as outf:
+            pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
+        
+    
+    
+    # Below uses the "generic" implementation of Graph. Runs slow -- O(n**2)
 #    aniso_map = t.Graph()
 #    
 #    ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
@@ -141,29 +157,29 @@ else:
 #    
     
 
-# now that Graph is made, load up Nodes in the Graph corresponding to the coordinates of interest
-
-start_node = aniso_map.coord2node[g.start_coord]
-
-if g.end_coord is None:
-    end_node = None
-else:
-    end_node = aniso_map.coord2node[g.end_coord]
-
-
-
-
-
-try:
-    #path_list = G.optimal_path(preds, start_node, end_node)
-    type(preds) # if already loaded, that means using a more "general" amp
-except NameError: #it doesn't know what 'preds' is...
-#    if os.path.lexists(g.paths_info_path) and os.path.lexists(g.preds_path):
-#        with open(g.paths_info_path, 'rb') as pa_info:
-#            with open(g.preds_path, 'rb') as pr_info:
-#                paths_info = pickle.load(pa_info)
-#                preds = pickle.load(pr_info)
-#    else:
+    # now that Graph is made, load up Nodes in the Graph corresponding to the coordinates of interest
+    
+    start_node = aniso_map.coord2node[g.start_coord]
+    
+    if g.end_coord is None:
+        end_node = None
+    else:
+        end_node = aniso_map.coord2node[g.end_coord]
+    
+    
+    
+    
+    
+    try:
+        #path_list = G.optimal_path(preds, start_node, end_node)
+        type(preds) # if already loaded, that means using a more "general" amp
+    except NameError: #it doesn't know what 'preds' is...
+    #    if os.path.lexists(g.paths_info_path) and os.path.lexists(g.preds_path):
+    #        with open(g.paths_info_path, 'rb') as pa_info:
+    #            with open(g.preds_path, 'rb') as pr_info:
+    #                paths_info = pickle.load(pa_info)
+    #                preds = pickle.load(pr_info)
+    #    else:
         start = time.clock()
         paths_info, preds = G.Dijkstra(aniso_map, start_node, end_node)
         end = time.clock()
@@ -173,10 +189,10 @@ except NameError: #it doesn't know what 'preds' is...
             pickle.dump(paths_info, outf, pickle.HIGHEST_PROTOCOL)
         with open(g.preds_path, 'wb') as outf:
             pickle.dump(preds, outf, pickle.HIGHEST_PROTOCOL)
-finally: #can figure out the path to take
-    path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
+#    finally: #can figure out the path to take
+#        path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
 
-
+path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
 
 if g.end_coord is not None:
     t.draw_path_onto_image(orig_im.size, path_list)

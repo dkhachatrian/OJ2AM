@@ -195,6 +195,7 @@ def generate_neighbor_coords(t, x_max, y_max, z_max = 1):
 
 
 def make_node(im_data, x, y, z = 0):
+    """ Given a NumPy array and coordinates x,y,(and z), generate a Node for use in a Graph. """
     if im_data.ndim == 3: #last dimension is data
         return Node(im_data[y,x], x, y)
     elif im_data.ndim == 4:
