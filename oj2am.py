@@ -57,13 +57,13 @@ orig_im = Image.open(os.path.join(g.dep, g.file_name))
 
 # if there's 'full' information regarding the start or end coordinates, load that instead of creating graph
 
-specific_cache_loaded = False
+#specific_cache_loaded = False
 paths_info_loaded = False
 preds_loaded = False
 
 for fname in os.listdir(g.cache_dir):
     if paths_info_loaded and preds_loaded:
-        specific_cache_loaded = True
+        #specific_cache_loaded = True
         break
     with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
         if g.out_prefix in fname:

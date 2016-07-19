@@ -18,6 +18,8 @@ os.chdir(dname)
 
 from lib import tools as t
 from PIL import Image
+import sys
+
 
 outdir = os.path.join(dname, 'outputs') #directory for output files
 cache_dir = os.path.join(dname, 'cache')
@@ -36,9 +38,12 @@ cache_dir = os.path.join(dname, 'cache')
 #end_coord = (20,14,0)
 # harder test
 file_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
-start_coord = (114,180,0)
-#end_coord = None
-end_coord = (330,440,0)
+
+
+
+
+
+
 
 orig_im = Image.open(os.path.join(dep, file_name))
 
@@ -49,7 +54,68 @@ out_prefix = file_name
 # t.prompt_coords
 
 
+def get_coords():
+    """ Ask for start and end coordinates. Ensure they're in the image size."""
+    
+    coords = []
+    n_dict = {0: 'start', 1: 'end'}
+    
+    while len(coords) < 2:
+        coord_ok = True
+        print("Input 'q' to quit.")
+        try:
+            if len(coords) == 0:
+                tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
+            else:
+                print("Please input the desired {0} coordinates.".format(n_dict[len(coords)]))
+                print("Input nothing to create a cached version of pathfinding to (or from) the previously designated start coordinate.")
+                tup = input("Enter input now:\n")
+        
+            if tup == 'q':
+                sys.exit()
+                
+            if len(coords) == 1 and tup is '':
+                coords.append(None)
+                break
+                
+            tup = tup.strip('() ')
+            nums = [int(x) for x in tup.split(',')]
+        except ValueError:
+            print("Error! Numbers not entered. Please try again.")
+            continue
+        
+        if len(nums) != len(orig_im.size):
+            print('Error! Input coordinates do not match image dimensions. Please try again.')
+            continue
+        for i,num in enumerate(nums):
+            if num < 0 or num >= orig_im.size[i]:
+                print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(orig_im.size))
+                coord_ok = False
+                break
+        if coord_ok:
+            if len(nums) == 2:
+                tup = (*nums, 0)
+            elif len(nums) == 3:
+                tup = tuple(nums)
+            coords.append(tup)
 
+    return coords
+
+
+#Hardcoding
+#
+#start_coord = (24,333,0)
+##start_coord = (114,180,0)
+##end_coord = None
+##end_coord = (330,440,0)
+#end_coord = (574,134,0)
+
+
+
+
+endpoints = get_coords()
+start_coord = endpoints[0]
+end_coord = endpoints[1]
 
 
 
