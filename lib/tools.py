@@ -31,6 +31,93 @@ def get_image():
     return file_name, Image.open(os.path.join(g.dep, file_name))
 
 
+def choose_program_mode():
+    """
+    Chooses how this program will run. Details in print statements below.
+    """
+    
+    print("Hello!")
+    print("Please indicate your preference:")
+    while True:
+        print("To draw multiple paths with endpoint fixed, type 'm'. You will then be asked to list the other desired coordinates.")
+        print("If you will indicate only one pair of coordinates, please type 's'.")
+        resp = input("Please type your choice now:\n")
+        
+        if resp.lower() == 'm':
+            return g.MULTI
+        elif resp.lower() == 's':
+            return g.SINGLE
+        elif resp.lower() == 'q':
+            sys.exit()
+        else:
+            print("Input not recognized! Please re-read the instructions and try again.")
+
+
+def get_coords():
+    """ Ask for start and end coordinates. Ensure they're in the image size."""
+    
+    coords = []
+    n_dict = {0: 'start', 1: 'end'}
+    
+    while len(coords) < 2:
+        coord_ok = True
+        print("(Input 'q' to quit.)")
+        print("Selected image's size is {0}.".format(g.orig_im.size))
+        try:
+            if len(coords) == 0:
+                tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
+            else:
+                print("Please input the desired {0} coordinates.".format(n_dict[len(coords)]))
+                print("Input nothing to create a cached version of pathfinding to (or from) the previously designated start coordinate.")
+                tup = input("Enter input now:\n")
+        
+            if tup == 'q':
+                sys.exit()
+                
+            if len(coords) == 1 and tup is '':
+                coords.append(None)
+                break
+                
+            tup = tup.strip('() ')
+            nums = [int(x) for x in tup.split(',')]
+        except ValueError:
+            print("Error! Numbers not entered. Please try again.")
+            continue
+        
+        if len(nums) != len(g.orig_im.size):
+            print('Error! Input coordinates do not match image dimensions. Please try again.')
+            continue
+        for i,num in enumerate(nums):
+            if num < 0 or num >= g.orig_im.size[i]:
+                print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(g.orig_im.size))
+                coord_ok = False
+                break
+        if coord_ok:
+            if len(nums) == 2:
+                tup = (*nums, 0)
+            elif len(nums) == 3:
+                tup = tuple(nums)
+            coords.append(tup)
+
+    return coords
+
+
+
+def prompt_user_about_neighbors():
+    """ Ask user whether to draw paths for neighbors as well as the indicated startpoint. """
+    
+    while True:
+        resp = input("Would you like to draw paths for nearby startpoints as well? [Y/N]:\n")
+        if resp.lower() == 'y':
+            return True
+        elif resp.lower() == 'n':
+            return False
+        else:
+            print("Input not recognized! Please respond with either 'Y', 'y', 'N', or 'n'.")
+
+
+
+
 def get_data():
     """
     Prompts user for names of files corresponding to outputs of OrientationJ's parameters: orientation, coherence, and energy.
@@ -45,8 +132,6 @@ def get_data():
     data_list = []
     data_names = ['orientation', 'coherence', 'energy']    
 
-
-    
 
     while len(data_list) < 3:
         file_name = input("Please state the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest, or enter nothing to quit: \n")        
