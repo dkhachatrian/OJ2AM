@@ -2,7 +2,7 @@
 """
 Created on Wed Jul 13 14:14:18 2016
 
-@author: David
+@author: David G. Khachatrian
 """
 
 # Graph clas
@@ -14,6 +14,7 @@ Created on Wed Jul 13 14:14:18 2016
 import numpy as np
 from collections import defaultdict
 import math
+from lib import tools as t
 
 
 from collections import deque
@@ -207,6 +208,7 @@ def access_coords(coords, data):
     return data[tuple(reversed(coords))] #dimensions are accessed 'backwards'
 
 
+epsilon = 0.001
 
 def cost(a,b):
     """ Given two adjacent Nodes, calculate the weight (determined by relative anisotropies, coherences, and energies). """
@@ -217,9 +219,10 @@ def cost(a,b):
     #dtheta = abs(b[vals_dict['ori']] - a[vals_dict['ori']]) #change in angle
     #thought process is that traversal along similar orientation is less costly
     
-    if a.energy + b.energy > 0:
+    if a.energy + b.energy > epsilon:
         result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy)
     else:
+        #result = 100000000 # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
         result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
         
     if math.isnan(result):
@@ -240,7 +243,7 @@ def Dijkstra(graph, start, end = None):
     """ Given a Graph with weighted edges (graph), determine the optimal path from the starting Node (start) to the target Node (end) (using Dijsktra's algorithm).
     Will yield the coordinates (one of Node's member variables, corresponding to its location in the original dataset) traversed from start to end.
     Will return:
-        settled: a dictionary such that settled[settled_node] = (optimal_cost, node_traversed_just_prior_to_reaching_settled_node)
+        settled: a dictionary such that settled[settled_node] = optimal_cost
         predecessors: a ditionary"""
  
  
@@ -312,6 +315,23 @@ def optimal_path(results, start, end):
         cur = results[cur]
     
     return list(reversed(path)) #to go from S->E instead of E->S
+    
+    
+    
+def cost_through_path(graph, coords_list):
+    """
+    Given a graph and a list of coordinates/Nodes to traverse, returns the cost associated with traversing the Nodes in the order specified in the list, or 'None' if there is a traversal across unconnected Nodes is attempted.
+    """
+    result = 0
+    for (before,after) in t.pairwise(coords_list):
+        if after is None:
+            return result
+        else:
+            try:
+                result += graph.costs[(before,after)]
+            except KeyError:
+                print("coords_list was invalid!")
+                return None
     
     
     

@@ -62,7 +62,8 @@ def get_coords():
     
     while len(coords) < 2:
         coord_ok = True
-        print("Input 'q' to quit.")
+        print("(Input 'q' to quit.)")
+        print("Selected image's size is {0}.".format(orig_im.size))
         try:
             if len(coords) == 0:
                 tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
@@ -119,6 +120,20 @@ end_coord = endpoints[1]
 
 
 
+
+def prompt_user_about_neighbors():
+    """ Ask user whether to draw paths for neighbors as well as the indicated startpoint. """
+    
+    while True:
+        resp = input("Would you like to draw paths for nearby startpoints as well? [Y/N]:\n")
+        if resp.lower() == 'y':
+            return True
+        elif resp.lower() == 'n':
+            return False
+        else:
+            print("Input not recognized! Please respond with either 'Y', 'y', 'N', or 'n'.")
+
+should_draw_neighbors = prompt_user_about_neighbors()
 
 
 # Cache filenames

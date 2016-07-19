@@ -11,6 +11,7 @@ import sys
 from PIL import Image
 #from matplotlib import colors
 import numpy as np
+import itertools
 
 
 #######################
@@ -55,6 +56,7 @@ def get_data():
             file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
         with open(os.path.join(g.dep, file_name), 'r') as inf:
             d_layer = np.loadtxt(inf, delimiter = '\t')
+            d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
             data_list.append(d_layer) #delimiter for Text Images is tab
 
     #stack arrays
@@ -108,7 +110,7 @@ def draw_path_onto_image(image_shape, path_list):
     should_overlay = input('Would you like the optimized path to be overlaid over the original image? (Y/N):\n')
     if should_overlay.lower() == 'y':
         overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
-        path_im_fname = '{0} start={1} end={2} overlay.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
+        path_im_fname = '{0} start={1} end={2} multiple_paths={3} overlay.jpg'.format(g.out_prefix, g.start_coord, g.end_coord, g.should_draw_neighbors)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         overlaid.save(path_im_path)
     
@@ -116,7 +118,7 @@ def draw_path_onto_image(image_shape, path_list):
     save_path_separately = input('Would you like the optimized path to be saved separetely as a grayscale image? (Y/N):\n')
     if save_path_separately.lower() == 'y':
         
-        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
+        path_im_fname = '{0} start={1} end={2} multiple_paths={3} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord, g.should_draw_neighbors)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         path_im.save(path_im_path)
 
@@ -124,6 +126,20 @@ def draw_path_onto_image(image_shape, path_list):
 
 
 
+
+
+
+
+
+#############################
+#### Iterating Functions ####
+#############################
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = itertools.tee(iterable, n=2)
+    next(b, None)
+    return zip(a, b)
 
 
 

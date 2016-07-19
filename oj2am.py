@@ -47,8 +47,6 @@ np.set_printoptions(precision=2, suppress = True) #for easier-to-look-at numbber
 
 
 
-
-
 orig_im = Image.open(os.path.join(g.dep, g.file_name))
 
 
@@ -124,7 +122,8 @@ if not (paths_info_loaded and preds_loaded):
         
         aniso_map = G.Graph()
         start = time.clock()
-        aniso_map.populate(graph_data)    
+        aniso_map.populate(graph_data)
+        end = time.clock()
         print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
     
     
@@ -195,7 +194,17 @@ if not (paths_info_loaded and preds_loaded):
 
 
 if (g.end_coord is not None and g.start_coord is not None):
-    path_list = G.optimal_path(preds, g.start_coord, g.end_coord)
+    
+    # testing for "stability" of optimal path to small startpoint perturbations
+    path_list = []
+    if g.should_draw_neighbors:
+        for start in G.generate_neighbor_coords(g.start_coord, *g.orig_im.size):
+            if start in preds:
+                path_list.extend(G.optimal_path(preds,start,g.end_coord)) #TODO: maybe make a list of lists and color-code different optimal paths? Probably only worth it if we notice large deviations in paths.
+            else:
+                print("Neighbor coordinate not settled!")
+                print("Re-run script with the end coordinate unspecified, then repeat your current request to fix this.")
+    path_list.extend(G.optimal_path(preds, g.start_coord, g.end_coord))
     t.draw_path_onto_image(orig_im.size, path_list)
 
 
