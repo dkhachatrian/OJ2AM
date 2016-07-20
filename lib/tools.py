@@ -53,37 +53,48 @@ def choose_program_mode():
             print("Input not recognized! Please re-read the instructions and try again.")
 
 
-def get_coords():
+def get_coords(mode):
     """ Ask for start and end coordinates. Ensure they're in the image size."""
     
+#    # TODO: collapse things down -- too much repeated code between modes...
+#    
+#    start_coord = None
+#    end_coords = [] #will either end up containing one or multiple elements depending on mode
+##    if mode == g.SINGLE:
+##        end_coord = None
+##    elif mode == g.MULTI:
+##        end_coords = []
+##    
     coords = []
-    n_dict = {0: 'start', 1: 'end'}
     
-    while len(coords) < 2:
+    while True:
         coord_ok = True
-        print("(Input 'q' to quit.)")
+        #print("(Input 'q' to quit.)")
         print("Selected image's size is {0}.".format(g.orig_im.size))
         try:
             if len(coords) == 0:
-                tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
+                tup = input("Please input the desired start coordinate:\n")
             else:
-                print("Please input the desired {0} coordinates.".format(n_dict[len(coords)]))
-                print("Input nothing to create a cached version of pathfinding to (or from) the previously designated start coordinate.")
-                tup = input("Enter input now:\n")
-        
+                if mode == g.SINGLE:
+                    if len(coords) == 2:
+                        break
+                    tup = input("Please input the desired end coordinate:\n")
+                elif mode == g.MULTI:
+                    print("You have currently input {0} end coordinate(s).".format(len(coords)-1))
+                    tup = input("Please input a desired end coordinate. Type 'c' to finish input and continue.\n")
+                    if tup == 'c':
+                        break
+            
             if tup == 'q':
                 sys.exit()
-                
-            if len(coords) == 1 and tup is '':
-                coords.append(None)
-                break
-                
-            tup = tup.strip('() ')
+            
+            tup.strip('() ')
             nums = [int(x) for x in tup.split(',')]
         except ValueError:
-            print("Error! Numbers not entered. Please try again.")
+            print('Error! Numbers not entered. Please try again.')
             continue
-        
+    
+    
         if len(nums) != len(g.orig_im.size):
             print('Error! Input coordinates do not match image dimensions. Please try again.')
             continue
@@ -98,9 +109,84 @@ def get_coords():
             elif len(nums) == 3:
                 tup = tuple(nums)
             coords.append(tup)
-
-    return coords
-
+    
+    
+    return coords    
+    
+    
+#    
+#    if mode == g.SINGLE:
+#        coords = []
+#        n_dict = {0: 'start', 1: 'end'}
+#        
+#        while len(coords) < 2:
+#            coord_ok = True
+#            #print("(Input 'q' to quit.)")
+#            print("Selected image's size is {0}.".format(g.orig_im.size))
+#            try:
+#                if len(coords) == 0:
+#                    tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
+#                else:
+#                    print("Please input the desired {0} coordinates.".format(n_dict[len(coords)]))
+#                    print("Input nothing to create a cached version of pathfinding to (or from) the previously designated start coordinate.")
+#                    tup = input("Enter input now:\n")
+#            
+#                if tup == 'q':
+#                    sys.exit()
+#                    
+#                if len(coords) == 1 and tup is '':
+#                    coords.append(None)
+#                    break
+#                    
+#                tup = tup.strip('() ')
+#                nums = [int(x) for x in tup.split(',')]
+#            except ValueError:
+#                print("Error! Numbers not entered. Please try again.")
+#                continue
+#            
+#            if len(nums) != len(g.orig_im.size):
+#                print('Error! Input coordinates do not match image dimensions. Please try again.')
+#                continue
+#            for i,num in enumerate(nums):
+#                if num < 0 or num >= g.orig_im.size[i]:
+#                    print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(g.orig_im.size))
+#                    coord_ok = False
+#                    break
+#            if coord_ok:
+#                if len(nums) == 2:
+#                    tup = (*nums, 0)
+#                elif len(nums) == 3:
+#                    tup = tuple(nums)
+#                coords.append(tup)
+#        return coords
+#
+#    if mode == g.MULTI:
+#        start_coord = None
+#        
+#        while start_coord is None:
+#            try:
+#                tup = input("Please input the desired start coordinate:\n")
+#                tup = tup.strip('() ')
+#                nums = [int(x) for x in tup.split(',')]
+#            except ValueError:
+#                print("Error! Numbers not entered. Please try again.")
+#                continue
+#            coord_ok = True
+#            for i,num in enumerate(nums):
+#                if num < 0 or num >= g.orig_im.size[i]:
+#                    print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(g.orig_im.size))
+#                    coord_ok = False
+#                    break
+#                
+#        
+#        
+#
+#def is_valid_coord(c):
+#    """
+#    Returns whether the input provided by the user in get_coords() is as expected.
+#    """
+#    
+    
 
 
 def prompt_user_about_neighbors():
@@ -151,22 +237,23 @@ def get_data():
     return data
 
 
-def overlay(fg, bg, mask = None):
+def prompt_saving_paths():
+    
+    while True:
+        tup = input("Would you like the individual paths to be saved separately? [Y/N]: \n")
+        if tup.lower() == 'y':
+            return True
+        elif tup.lower() == 'n':
+            return False
+        else:
+            print("Input not recognized! Please try again.")
+
+
+    
+def draw_path_onto_image(image_shape, path_list, color = None, save_paths):
     """
-    Overlay two images, using a mask. The mask defaults to path_im converted to 'L' mode.
-    """
-    if mask is None:
-        mask = fg.convert('L')
-    
-    out_im = fg.copy()  
-    
-    out_im.paste(bg, (0, 0), mask) #this order because I elected to make the path black (==> 0 at path, 255 elsewhere)
-    return out_im
-    
-    
-def draw_path_onto_image(image_shape, path_list):
-    """
-    Draws path onto image data, rendering an overlay if desired.
+    Draws path onto image data.
+    Returns Images of the image with path overlaid, and the path alone as an image.
     """
     
     black = [0,0,0]
@@ -182,7 +269,7 @@ def draw_path_onto_image(image_shape, path_list):
         index = index[:-1] #slicing due to this only being 2D; TODO: remove when using 3D
         index = tuple(reversed(index))
         index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
-        mask_data[index] = 0 #slicing due to this only being 2D
+        mask_data[index] = 0
         path_im_data[index] = yellow
     
     #save as new image, could be used as mask or for an overlay
@@ -192,25 +279,46 @@ def draw_path_onto_image(image_shape, path_list):
     path_im = Image.fromarray(path_im_data)
     mask_im = Image.fromarray(mask_data)
     
-    should_overlay = input('Would you like the optimized path to be overlaid over the original image? (Y/N):\n')
-    if should_overlay.lower() == 'y':
-        overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
-        path_im_fname = '{0} start={1} end={2} multiple_paths={3} overlay.jpg'.format(g.out_prefix, g.start_coord, g.end_coord, g.should_draw_neighbors)
-        path_im_path = os.path.join(g.outdir, path_im_fname)
-        overlaid.save(path_im_path)
     
+    overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
     
-    save_path_separately = input('Would you like the optimized path to be saved separetely as a grayscale image? (Y/N):\n')
-    if save_path_separately.lower() == 'y':
-        
-        path_im_fname = '{0} start={1} end={2} multiple_paths={3} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord, g.should_draw_neighbors)
+    if save_paths:
+        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         path_im.save(path_im_path)
+    
+    return overlaid, path_im    
+    
+
 
  
+def prompt_saving_overlay_to_file(overlay, start, end):
+    """
+    """
+    
+    should_overlay = input('Would you like the optimized path(s) to be overlaid over the original image? (Y/N):\n')
+    if should_overlay.lower() == 'y':
+        # TODO: should change behavior depending on mode? Don't think it's necessary...
+        path_im_fname = '{0} start={1} end={2} draw_neighbors={3} overlay.jpg'.format(g.out_prefix, start, end, g.should_draw_neighbors)
+        path_im_path = os.path.join(g.outdir, path_im_fname)
+        overlay.save(path_im_path)
+    
+    
 
 
 
+def overlay(fg, bg, mask = None):
+    """
+    Overlay two images, using a mask. The mask defaults to path_im converted to 'L' mode.
+    """
+    if mask is None:
+        mask = fg.convert('L')
+    
+    out_im = fg.copy()  
+    
+    out_im.paste(bg, (0, 0), mask) #this order because I elected to make the path black (==> 0 at path, 255 elsewhere)
+    return out_im
+    
 
 
 
