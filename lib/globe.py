@@ -43,17 +43,7 @@ cache_dir = os.path.join(dname, 'cache')
 #start_coord = (2,3,0) #(x,y) coordinate
 #end_coord = (20,14,0)
 # harder test
-file_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 
-
-
-
-
-
-
-orig_im = Image.open(os.path.join(dep, file_name))
-
-out_prefix = file_name
 
 
 # Ask for start/end locations
@@ -75,34 +65,46 @@ out_prefix = file_name
 
 
 
-#endpoints = t.get_coords()
-endpoints = [(34,223,0), (175,130,0)]
-start_coord = endpoints[0]
-end_coord = endpoints[1]
+##endpoints = t.get_coords()
+#endpoints = [(34,223,0), (175,130,0)]
+#start_coord = endpoints[0]
+#end_coord = endpoints[1]
+#
+#stop_coord = (87,218,0) #debugging -- where path becomes weird...
+#
 
-stop_coord = (87,218,0) #debugging -- where path becomes weird...
+
+# Hardcoding, for quicker testing
+mode = t.choose_program_mode()
+im_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
+orig_im = Image.open(os.path.join(dep, im_name))
+out_prefix = im_name
+## User-input values
+#mode = t.choose_program_mode()
+#im_name, orig_im = t.get_image()
+#out_prefix = file_name
 
 
 
-
+end_coords = t.get_coords(mode)
+start_coord = end_coords.pop(0)
 
 should_draw_neighbors = t.prompt_user_about_neighbors()
 
 
-# Cache filenames
-aniso_map_paths = []
-
-for coord in (start_coord, end_coord):
-    aniso_map_fname = '{0} aniso_map.p'.format(out_prefix)    
-    #aniso_map_fname = '{0} initial={1} aniso_map.p'.format(out_prefix, coord)
-    aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
-    aniso_map_paths.append(aniso_map_path)
+## Cache filenames
+aniso_map_fname = '{0} aniso_map.p'.format(out_prefix)
+aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
 
 
+#aniso_map_paths = []
+#
+#for end_coord in end_coords:
+#    for coord in (start_coord, end_coord):
+#        aniso_map_fname = '{0} aniso_map.p'.format(out_prefix)    
+#        #aniso_map_fname = '{0} initial={1} aniso_map.p'.format(out_prefix, coord)
+#        aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
+#        aniso_map_paths.append(aniso_map_path)
+#
 
-paths_info_fname = '{0} start={1} end={2} paths_info.p'.format(out_prefix, start_coord, end_coord)
-paths_info_path = os.path.join(cache_dir, paths_info_fname)
 
-
-preds_fname = '{0} start={1} end={2} preds.p'.format(out_prefix, start_coord, end_coord)
-preds_path = os.path.join(cache_dir, preds_fname)

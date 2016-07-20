@@ -53,10 +53,17 @@ def mat2path(image_name, start_coord, end_coord):
     np.set_printoptions(precision=2, suppress = True) #for easier-to-look-at numbbers when printing in pdb
     
     
-    orig_im = Image.open(os.path.join(g.dep, g.file_name))
+    orig_im = Image.open(os.path.join(g.dep, image_name))
     
     
+    #not needed?
+    paths_info_fname = '{0} start={1} end={2} paths_info.p'.format(g.out_prefix, start_coord, end_coord)
+    paths_info_path = os.path.join(g.cache_dir, paths_info_fname)
     
+    
+    preds_fname = '{0} start={1} end={2} preds.p'.format(g.out_prefix, start_coord, end_coord)
+    preds_path = os.path.join(g.cache_dir, preds_fname)
+
     
     
     # if there's 'full' information regarding the start or end coordinates, load that instead of creating graph
@@ -104,18 +111,29 @@ def mat2path(image_name, start_coord, end_coord):
     #create aniso_map
     #used cached map if already processed
     if not (paths_info_loaded and preds_loaded):
-        for poss_path in g.aniso_map_paths:
-            try:
-                type(aniso_map)
-                break
-            except NameError:
-                if os.path.lexists(poss_path): 
-                    with open(poss_path, 'rb') as inf:
-                        start = time.clock()
-                        aniso_map = pickle.load(inf)
-                        end = time.clock()
-                        print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
-                
+        try:
+            type(aniso_map)
+        except NameError:
+            if g.aniso_map_fname in os.listdir(g.cache_dir):
+                with open(os.path.join(g.cache_dir, g.aniso_map_fname), 'rb') as inf:
+                    start = time.clock()
+                    aniso_map = pickle.load(inf)
+                    end = time.clock()
+                    print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+#                
+#        for poss_path in g.aniso_map_paths:
+#            try:
+#                type(aniso_map)
+#                break
+#            except NameError:
+#                if os.path.lexists(poss_path): 
+#                    with open(poss_path, 'rb') as inf:
+#                        start = time.clock()
+#                        aniso_map = pickle.load(inf)
+#                        end = time.clock()
+#                        print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+#                
+                    
         # see if map was loaded
         try:
             type(aniso_map)
@@ -164,7 +182,7 @@ def mat2path(image_name, start_coord, end_coord):
         
         start_node = aniso_map.coord2node[start_coord]
         
-        if g.end_coord is None:
+        if end_coord is None:
             end_node = None
         else:
             end_node = aniso_map.coord2node[end_coord]
@@ -188,9 +206,9 @@ def mat2path(image_name, start_coord, end_coord):
             end = time.clock()
             print('The pathfinding algorithm, working on a map with {0} Nodes, took {1} seconds.'.format(len(aniso_map.nodes), end-start))
             #dump data
-            with open(g.paths_info_path, 'wb') as outf:
+            with open(paths_info_path, 'wb') as outf:
                 pickle.dump(paths_info, outf, pickle.HIGHEST_PROTOCOL)
-            with open(g.preds_path, 'wb') as outf:
+            with open(preds_path, 'wb') as outf:
                 pickle.dump(preds, outf, pickle.HIGHEST_PROTOCOL)
     #    finally: #can figure out the path to take
     #        path_list = G.optimal_path(preds, g.start_coord, g.end_coord)

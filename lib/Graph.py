@@ -65,11 +65,18 @@ class Node: # Node will be
 
 
  #bidirectional. Due to simplicity in determining adjacency, edges are "hardwired" and requires the original NumPy array of data to initialize (in O(n) time)
+#
 class Graph:
+    """
+    Bidirectional graph.
+    self.populate(data) and generate_neighbor_coords(coord, *bounds) are made specifically for the simpler case where the Graph is only connected to coordinates within math.sqrt(discriminant_dist_sq) of each other.
+    Also, given: (1) the nature of the Nodes' connections being largely static for its use here; (2) the cost function being subject to change as the anisotropic cost function needs to be fine-tuned; and (3) the desire to cache the Graph object (instead of starting from scratch every time). Given these things, the weights of the edges between Nodes is not saved within the Graph, and instead can be obtained by calling the cost(node_a,node_b) function outside of this class.
+    (Honestly, given the input data and connections, pathfinding could probably be performed using the original input data without having to create a Graph form of it. But the use of Nodes makes the information in the array easier to read.)
+    """
     def __init__(self):
         self.nodes = set()
         self.edges = defaultdict(list) #key = from_node, values = to_node(s)
-        self.costs = {}
+#        self.costs = {}
         self.coord2node = {}
     
     def populate(self, data):
@@ -81,9 +88,10 @@ class Graph:
     def add_edge(self, a, b):
         self.edges[a].append(b)
         self.edges[b].append(a) #bidirectional
-        cur_cost = cost(a,b)
-        self.costs[(a,b)] = cur_cost
-        self.costs[(b,a)] = cur_cost
+        
+#        cur_cost = cost(a,b)
+#        self.costs[(a,b)] = cur_cost
+#        self.costs[(b,a)] = cur_cost
     
     def create_adjacency_matrix(self, data):
         """ Create adjacency list for a Graph. Simple case for image. """
@@ -104,6 +112,8 @@ class Graph:
         
         #establish connections, looking up the nodes by their coords
         # Average case O(n) * O(1) = O(n)
+        
+        ## TODO: CHANGE THIS is the connections ever become more complicated
         for cur_k in self.coord2node:
             neighbor_coords = generate_neighbor_coords(cur_k, *bounds)
             cur_node = self.coord2node[cur_k]
@@ -113,11 +123,14 @@ class Graph:
         
         
     def is_connected(self,a,b):
-        try:
-            self.costs[(a,b)] #does an entry for its cost exist?
-            return True
-        except KeyError: #no associated cost --> not connected
-            return False
+        return (a in self.edges[b])
+        
+        # Below implementation requires a baked-in costs dictionary
+#        try:
+#            self.costs[(a,b)] #does an entry for its cost exist?
+#            return True
+#        except KeyError: #no associated cost --> not connected
+#            return False
         
         
 #        for i in ind:
@@ -265,7 +278,8 @@ def Dijkstra(graph, start, end = None):
             
             #update Nodes with potentially new lower min costs
             for node in graph.edges[current_node]:
-                additional_cost = graph.costs[(current_node, node)]
+                additional_cost = cost(current_node, node)                
+                #additional_cost = graph.costs[(current_node, node)]
                 new_cost = current_min_cost + additional_cost
                 if node not in settled:
                     if node not in v_unsettled: #first visit of Node
@@ -323,13 +337,18 @@ def cost_through_path(graph, coords_list):
     """
     Given a graph and a list of coordinates/Nodes to traverse, returns the cost associated with traversing the Nodes in the order specified in the list, or 'None' if there is a traversal across unconnected Nodes is attempted.
     """
+    
+    # TODO: probably need to fix the logic here...
     result = 0
     for (before,after) in t.pairwise(coords_list):
         if after is None:
             return result
         else:
+            n1 = graph.coord2node[before]
+            n2 = graph.coord2node[after]
             try:
-                result += graph.costs[(before,after)]
+                result += cost(n1,n2)
+#                result += graph.costs[(before,after)]
             except KeyError:
                 print("coords_list was invalid!")
                 return None

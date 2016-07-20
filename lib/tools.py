@@ -22,13 +22,22 @@ def get_image():
     """
     Prompts user for name of image, looking in the dependencies directory.
     """
-    file_name = input("Please state the name of the file corresponding to the data in the previous input files, or enter nothing to quit: \n")        
-    while not os.path.isfile(os.path.join(g.dep, file_name)):
-        if file_name == '':
-            sys.exit()
-        file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the original image being analyzed (or enter nothing to quit): \n")
+    while True:
+        try:
+            file_name = input("Please state the name of the file corresponding to the data to be input, or enter nothing to quit: \n")
+            if file_name == '':
+                sys.exit()
+            im = Image.open(os.path.join(g.dep, file_name))
+            break
+        except FileNotFoundError:
+            print("File not found! Please check the spelling of the filename input, and ensure the filename extension is written as well.")
+            continue
+        except IOError: #file couldn't be read as an Image
+            print("File could not be read as an image! Please ensure you are typing the filename of the original image..")
+            continue
+        
     
-    return file_name, Image.open(os.path.join(g.dep, file_name))
+    return file_name, im
 
 
 def choose_program_mode():
@@ -227,12 +236,13 @@ def get_data():
             file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
         with open(os.path.join(g.dep, file_name), 'r') as inf:
             d_layer = np.loadtxt(inf, delimiter = '\t')
-            d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
+            #d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
             data_list.append(d_layer) #delimiter for Text Images is tab
 
     #stack arrays
 
     data = np.stack(data_list, axis = -1) #axis = -1 makes data the last dimension
+    np.around(data, decimals = 3, out = data)
     
     return data
 
@@ -250,7 +260,7 @@ def prompt_saving_paths():
 
 
     
-def draw_path_onto_image(image_shape, path_list, color = None, save_paths):
+def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
     """
     Draws path onto image data.
     Returns Images of the image with path overlaid, and the path alone as an image.
@@ -261,8 +271,8 @@ def draw_path_onto_image(image_shape, path_list, color = None, save_paths):
     yellow = [1,1,0]
     
     #ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
-    mask_data = np.ones(tuple(reversed(image_shape)))
-    path_im_data = np.ones((*reversed(image_shape),3)) #the '3' is for normalized RGB values at each pixel. Reversed because array dimensions in opposite order of image.shape tuple
+    mask_data = np.ones(tuple(reversed(orig_im.size)))
+    path_im_data = np.ones((*reversed(orig_im.size),3)) #the '3' is for normalized RGB values at each pixel. Reversed because array dimensions in opposite order of image.shape tuple
     
     #color in black the optimal path
     for index in path_list:
@@ -280,14 +290,15 @@ def draw_path_onto_image(image_shape, path_list, color = None, save_paths):
     mask_im = Image.fromarray(mask_data)
     
     
-    overlaid = overlay(fg = path_im, bg = g.orig_im, mask = mask_im)
+    overlaid = overlay(fg = path_im, bg = orig_im, mask = mask_im)
     
     if save_paths:
-        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, g.start_coord, g.end_coord)
+        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, path_list[0], path_list[-1])
         path_im_path = os.path.join(g.outdir, path_im_fname)
         path_im.save(path_im_path)
     
-    return overlaid, path_im    
+    return overlaid
+#    return overlaid, path_im    
     
 
 
