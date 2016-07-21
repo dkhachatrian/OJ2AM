@@ -12,6 +12,9 @@ from PIL import Image
 #from matplotlib import colors
 import numpy as np
 import itertools
+from matplotlib import colors as c
+import pickle
+import time
 
 
 #######################
@@ -270,6 +273,11 @@ def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
     white = [1,1,1] #RGB value for black pixels. Will be used to mark the optimal path on the original image
     yellow = [1,1,0]
     
+    if color is None:
+        color = 'yellow'
+    
+    color = c.hex2color(c.cnames[color])
+    
     #ind = np.ndindex(graph_data.shape[:-1]) #allows loops over all but the last dimension (see below)
     mask_data = np.ones(tuple(reversed(orig_im.size)))
     path_im_data = np.ones((*reversed(orig_im.size),3)) #the '3' is for normalized RGB values at each pixel. Reversed because array dimensions in opposite order of image.shape tuple
@@ -280,7 +288,7 @@ def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
         index = tuple(reversed(index))
         index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
         mask_data[index] = 0
-        path_im_data[index] = yellow
+        path_im_data[index] = color
     
     #save as new image, could be used as mask or for an overlay
     path_im_data = (path_im_data * 255).astype('uint8')
@@ -348,8 +356,55 @@ def pairwise(iterable):
 
 
 
+#########################
+#### Cache Functions ####
+#########################
 
 
+def load_map(aniso_map):
+    """
+    Loads up the aniso_map corresponding to the chosen image, or creates it (and caches it) if it doesn't exist.
+    """
+    
+    ## Map Cache filenames
+    aniso_map_fname = '{0} aniso_map.p'.format(g.out_prefix)
+    #aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
+
+
+    if aniso_map_fname in os.listdir(g.cache_dir):
+        with open(os.path.join(g.cache_dir, aniso_map_fname), 'rb') as inf:
+            start = time.clock()
+            aniso_map = pickle.load(inf)
+            end = time.clock()
+            print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+#                
+#        for poss_path in g.aniso_map_paths:
+#            try:
+#                type(aniso_map)
+#                break
+#            except NameError:
+#                if os.path.lexists(poss_path): 
+#                    with open(poss_path, 'rb') as inf:
+#                        start = time.clock()
+#                        aniso_map = pickle.load(inf)
+#                        end = time.clock()
+#                        print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+#                
+    
+    else:
+        # ask for input data
+        graph_data = get_data()
+        # build graph
+        start = time.clock()
+        aniso_map.populate(graph_data)
+        end = time.clock()
+        print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+    
+    
+        #save maps made of particular images
+        
+        with open(g.aniso_map_path, 'wb') as outf:
+            pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
 
 
 

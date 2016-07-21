@@ -17,6 +17,7 @@ os.chdir(dname)
 ####
 
 from lib import tools as t
+from lib import Graph as G
 from PIL import Image
 import sys
 
@@ -92,9 +93,10 @@ start_coord = end_coords.pop(0)
 should_draw_neighbors = t.prompt_user_about_neighbors()
 
 
-## Cache filenames
-aniso_map_fname = '{0} aniso_map.p'.format(out_prefix)
-aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
+
+
+aniso_map = G.Graph()
+t.load_map(aniso_map)
 
 
 #aniso_map_paths = []
@@ -108,3 +110,8 @@ aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
 #
 
 
+# for drawing multiple paths. Names must match the names in colors.cnames.keys()
+
+
+path_colors = ['yellow', 'cyan', 'lime', 'red']
+#path_colors = ['yellow', 'crimson', 'darkgreen', 'purple', 'midnightblue', 'royalblue']

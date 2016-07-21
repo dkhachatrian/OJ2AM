@@ -53,8 +53,11 @@ overlay = g.orig_im.copy()
 
 should_save_paths = t.prompt_saving_paths()
 
-for path_list in paths_ll:
-    overlay = t.draw_path_onto_image(overlay, path_list, save_paths = should_save_paths, color = None)
+for i,path_list in enumerate(paths_ll): #paths limited by length of path_colors. If ever necessary, can expand selection.
+    try:
+        overlay = t.draw_path_onto_image(overlay, path_list, save_paths = should_save_paths, color = g.path_colors[i])
+    except IndexError: #g.path_colors ran out. Default to yellow
+        overlay = t.draw_path_onto_image(overlay, path_list, save_paths = should_save_paths, color = 'yellow')
 
 t.prompt_saving_overlay_to_file(overlay, start = g.start_coord, end = g.end_coords)
 
