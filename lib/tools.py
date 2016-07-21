@@ -316,7 +316,7 @@ def load_map():
     
     ## Map Cache filenames
     aniso_map_fname = '{0} aniso_map.p'.format(g.out_prefix)
-    #aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
+    aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
 
 
     if aniso_map_fname in os.listdir(g.cache_dir):
@@ -343,6 +343,7 @@ def load_map():
         # ask for input data
         graph_data = get_data()
         # build graph
+        aniso_map = G.Graph()
         start = time.clock()
         aniso_map.populate(graph_data)
         end = time.clock()
@@ -351,7 +352,7 @@ def load_map():
     
         #save maps made of particular images
         
-        with open(g.aniso_map_path, 'wb') as outf:
+        with open(aniso_map_path, 'wb') as outf:
             pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
 
     return aniso_map

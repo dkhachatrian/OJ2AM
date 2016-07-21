@@ -16,7 +16,7 @@ from collections import defaultdict
 import math
 from lib import tools as t
 from lib import globe as g
-
+import time
 
 from collections import deque
 
@@ -33,6 +33,7 @@ discriminant_dist = 2
 class Node: # Node will be 
     def __init__(self, data, x, y, z = 0):
         self.coords = (x,y,z) #unique ID for Node -- ensures each Node is different
+        #self.id = self.coords
         self.orientation = data[0]
         self.coherence = data[1]
         self.energy = data[2]
@@ -86,8 +87,10 @@ class Graph:
         self.nodes.add(n)
 
     def add_edge(self, a, b):
-        self.edges[a].append(b)
-        self.edges[b].append(a) #bidirectional
+        if b not in self.edges[a]:
+            self.edges[a].append(b)
+        if a not in self.edges[b]:
+            self.edges[b].append(a) #bidirectional
         
 #        cur_cost = cost(a,b)
 #        self.costs[(a,b)] = cur_cost
@@ -266,8 +269,15 @@ def Dijkstra(graph, start, end = None):
     v_unsettled = {} #visited but unsettled Nodes
     pred = {start.coords: None} #dictionary of predecessors
     processing_queue = deque([start])
+    start = time.clock()
+    num_notices = 0
     
     while len(settled) < total_nodes:
+        dt = time.clock() - start
+        if dt > (num_notices+1) * 10:
+            "{0} seconds have passed since starting Dijkstra's algorithm. Currently, {1} out of {2} Nodes have been settled.".format(dt, len(settled), total_nodes)
+            num_notices += 1
+        
         while len(v_unsettled) == 0:
             try:
                 current_node = processing_queue.popleft()
@@ -333,28 +343,25 @@ def optimal_path(results, start, end):
     
     
     
-def cost_through_path(graph, coords_list):
-    """
-    Given a graph and a list of coordinates/Nodes to traverse, returns the cost associated with traversing the Nodes in the order specified in the list, or 'None' if there is a traversal across unconnected Nodes is attempted.
-    """
+
     
-    # TODO: probably need to fix the logic here...
-    result = 0
-    for (before,after) in t.pairwise(coords_list):
-        if after is None:
-            return result
-        else:
-            n1 = graph.coord2node[before]
-            n2 = graph.coord2node[after]
-            try:
-                result += cost(n1,n2)
-#                result += graph.costs[(before,after)]
-            except KeyError:
-                print("coords_list was invalid!")
-                return None
-    
-    
-    
+#    # TODO: probably need to fix the logic here...
+#    result = 0
+#    for (before,after) in t.pairwise(coords_list):
+#        if after is None:
+#            return result
+#        else:
+#            n1 = graph.coord2node[before]
+#            n2 = graph.coord2node[after]
+#            try:
+#                result += cost(n1,n2)
+##                result += graph.costs[(before,after)]
+#            except KeyError:
+#                print("coords_list was invalid!")
+#                return None
+#    
+#    
+#    
 
 
 
