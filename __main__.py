@@ -40,24 +40,34 @@ if not os.path.isdir(g.cache_dir):
 #end_coords = t.get_coords(mode)
 #start_coord = end_coords.pop(0)
 
+# TODO: Deal with neighbors in a clean way...
 
-paths_ll = [] #will be a list of (path_lists)
+paths_ll = [] #will be a list of (path_lists) for related sets of paths
+paths_lll = [] #will contain a list of paths_ll's
+
+gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
 
 if len(g.end_coords) > 1:
-    o.mat2path(g.im_name, g.start_coord, None) #run Dijkstra's algorithm on entire image and cache results so we don't have to redo for each endpoint
+    o.mat2path(g.im_name, g.start_coord, None, gen_paths_info, gen_preds) #run Dijkstra's algorithm on entire image and cache results so we don't have to redo for each endpoint
+    #gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
 
-for end_coord in g.end_coords:
-    paths_ll.append(o.mat2path(g.im_name, g.start_coord, end_coord)) #collect paths
+for end_coord_list in g.end_coords_ll:
+    paths_ll = []
+    for end_coord in end_coord_list:
+        paths_ll.append(o.mat2path(g.im_name, g.start_coord, end_coord, gen_paths_info, gen_preds)) #collect paths
+    paths_lll.append(paths_ll)
 
 overlay = g.orig_im.copy()
 
 should_save_paths = t.prompt_saving_paths()
 
-for i,path_list in enumerate(paths_ll): #paths limited by length of path_colors. If ever necessary, can expand selection.
+# TODO: fix colors...
+
+for i,paths_ll in enumerate(paths_lll):
     try:
-        overlay = t.draw_path_onto_image(overlay, path_list, save_paths = should_save_paths, color = g.path_colors[i])
+        overlay = t.draw_paths_onto_image(overlay, paths_ll, save_paths = should_save_paths, color = g.path_colors[i])
     except IndexError: #g.path_colors ran out. Default to yellow
-        overlay = t.draw_path_onto_image(overlay, path_list, save_paths = should_save_paths, color = 'yellow')
+        overlay = t.draw_paths_onto_image(overlay, paths_ll, save_paths = should_save_paths, color = 'yellow')
 
 t.prompt_saving_overlay_to_file(overlay, start = g.start_coord, end = g.end_coords)
 

@@ -86,17 +86,35 @@ out_prefix = im_name
 #out_prefix = file_name
 
 
+#
+#end_coords = t.get_coords(mode)
+#start_coord = end_coords.pop(0)
+#
 
-end_coords = t.get_coords(mode)
-start_coord = end_coords.pop(0)
+start_coord, end_coords = t.get_coords(mode)
 
 should_draw_neighbors = t.prompt_user_about_neighbors()
 
+if should_draw_neighbors:
+    end_coords_ll = t.make_neighbor_ll(end_coords)
+else:
+    end_coords_ll = []
+    for ec in end_coords:
+        end_coords_ll.append([ec]) #wrapper for path overlaying process in __main__
+    
+
+#
+#if mode == MULTI:
+#    for coord in end_coords:
+#        end_coords_ll.append(G.generate_neighbor_coords(coord, *orig_im.size).append(coord))
+#elif mode == SINGLE:
+#    for coord in end_coords:
+#        end_coords_ll.append(coord)
 
 
+aniso_map = t.load_map()
 
-aniso_map = G.Graph()
-t.load_map(aniso_map)
+
 
 
 #aniso_map_paths = []

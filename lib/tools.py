@@ -6,6 +6,7 @@ Created on Thu Jul  7 15:41:09 2016
 """
 
 from lib import globe as g
+from lib import Graph as G
 import os
 import sys
 from PIL import Image
@@ -123,83 +124,29 @@ def get_coords(mode):
             coords.append(tup)
     
     
-    return coords    
+    start_coord = coords.pop(0)
+    end_coords = coords
+    return start_coord, end_coords
     
     
-#    
-#    if mode == g.SINGLE:
-#        coords = []
-#        n_dict = {0: 'start', 1: 'end'}
-#        
-#        while len(coords) < 2:
-#            coord_ok = True
-#            #print("(Input 'q' to quit.)")
-#            print("Selected image's size is {0}.".format(g.orig_im.size))
-#            try:
-#                if len(coords) == 0:
-#                    tup = input("Please input the desired {0} coordinates:\n".format(n_dict[len(coords)]))
-#                else:
-#                    print("Please input the desired {0} coordinates.".format(n_dict[len(coords)]))
-#                    print("Input nothing to create a cached version of pathfinding to (or from) the previously designated start coordinate.")
-#                    tup = input("Enter input now:\n")
-#            
-#                if tup == 'q':
-#                    sys.exit()
-#                    
-#                if len(coords) == 1 and tup is '':
-#                    coords.append(None)
-#                    break
-#                    
-#                tup = tup.strip('() ')
-#                nums = [int(x) for x in tup.split(',')]
-#            except ValueError:
-#                print("Error! Numbers not entered. Please try again.")
-#                continue
-#            
-#            if len(nums) != len(g.orig_im.size):
-#                print('Error! Input coordinates do not match image dimensions. Please try again.')
-#                continue
-#            for i,num in enumerate(nums):
-#                if num < 0 or num >= g.orig_im.size[i]:
-#                    print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(g.orig_im.size))
-#                    coord_ok = False
-#                    break
-#            if coord_ok:
-#                if len(nums) == 2:
-#                    tup = (*nums, 0)
-#                elif len(nums) == 3:
-#                    tup = tuple(nums)
-#                coords.append(tup)
-#        return coords
-#
-#    if mode == g.MULTI:
-#        start_coord = None
-#        
-#        while start_coord is None:
-#            try:
-#                tup = input("Please input the desired start coordinate:\n")
-#                tup = tup.strip('() ')
-#                nums = [int(x) for x in tup.split(',')]
-#            except ValueError:
-#                print("Error! Numbers not entered. Please try again.")
-#                continue
-#            coord_ok = True
-#            for i,num in enumerate(nums):
-#                if num < 0 or num >= g.orig_im.size[i]:
-#                    print('Error! Input values were out of image-size bounds! Image size bounds is {0}. Please try again.'.format(g.orig_im.size))
-#                    coord_ok = False
-#                    break
-#                
-#        
-#        
-#
-#def is_valid_coord(c):
-#    """
-#    Returns whether the input provided by the user in get_coords() is as expected.
-#    """
-#    
     
+def make_neighbor_ll(coord_list):
+    """
+    From a list of coordinates, return a list of a list of coordinates. Each list of coordinates contains a coordinate from coord_list and its valid neighbors (that remain within the bounds of the original image).
+    """
 
+    coord_ll = []
+
+    for coord in coord_list:
+        clist = G.generate_neighbor_coords(coord, *g.orig_im.size)
+        clist.append(coord)
+        coord_ll.append(clist)
+    
+    return coord_ll
+    
+    
+    
+    
 
 def prompt_user_about_neighbors():
     """ Ask user whether to draw paths for neighbors as well as the indicated startpoint. """
@@ -263,7 +210,7 @@ def prompt_saving_paths():
 
 
     
-def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
+def draw_paths_onto_image(orig_im, paths_ll, save_paths, color = None):
     """
     Draws path onto image data.
     Returns Images of the image with path overlaid, and the path alone as an image.
@@ -283,12 +230,13 @@ def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
     path_im_data = np.ones((*reversed(orig_im.size),3)) #the '3' is for normalized RGB values at each pixel. Reversed because array dimensions in opposite order of image.shape tuple
     
     #color in black the optimal path
-    for index in path_list:
-        index = index[:-1] #slicing due to this only being 2D; TODO: remove when using 3D
-        index = tuple(reversed(index))
-        index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
-        mask_data[index] = 0
-        path_im_data[index] = color
+    for path_list in paths_ll:
+        for index in path_list:
+            index = index[:-1] #slicing due to this only being 2D; TODO: remove when using 3D
+            index = tuple(reversed(index))
+            index = tuple(np.subtract(index, np.ones(len(index))).astype(int))
+            mask_data[index] = 0
+            path_im_data[index] = color
     
     #save as new image, could be used as mask or for an overlay
     path_im_data = (path_im_data * 255).astype('uint8')
@@ -301,7 +249,7 @@ def draw_path_onto_image(orig_im, path_list, save_paths, color = None):
     overlaid = overlay(fg = path_im, bg = orig_im, mask = mask_im)
     
     if save_paths:
-        path_im_fname = '{0} start={1} end={2} optimized_path.jpg'.format(g.out_prefix, path_list[0], path_list[-1])
+        path_im_fname = '{0} start={1} end={2} draw_neighbors={3} optimized_path.jpg'.format(g.out_prefix, path_list[0], path_list[-1], g.should_draw_neighbors)
         path_im_path = os.path.join(g.outdir, path_im_fname)
         path_im.save(path_im_path)
     
@@ -361,7 +309,7 @@ def pairwise(iterable):
 #########################
 
 
-def load_map(aniso_map):
+def load_map():
     """
     Loads up the aniso_map corresponding to the chosen image, or creates it (and caches it) if it doesn't exist.
     """
@@ -406,9 +354,41 @@ def load_map(aniso_map):
         with open(g.aniso_map_path, 'wb') as outf:
             pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
 
+    return aniso_map
 
-
-
+def load_general_solution(im_name, root_coord):
+    """
+    Loads general solutions to the Graph corresponding to im_name starting/ending at root_coord, if it exists.
+    Returns loaded data if exists in the order (paths_info,preds). Else returns (None, None)
+    """
+    
+    paths_info_loaded = False
+    preds_loaded = False
+    
+    
+    for fname in os.listdir(g.cache_dir):
+        if paths_info_loaded and preds_loaded:
+            #specific_cache_loaded = True
+            break
+        with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
+            if g.out_prefix in fname and str(None) in fname and str(root_coord) in fname:
+                if not paths_info_loaded and 'paths_info' in fname:
+                    start = time.clock()
+                    paths_info = pickle.load(inf)
+                    end = time.clock()
+                    print("Loading gen_paths_info took {0} seconds.".format(end-start))
+                    paths_info_loaded = True
+                if not preds_loaded and 'preds' in fname:
+                    start = time.clock()
+                    preds = pickle.load(inf)
+                    end = time.clock()
+                    print("Loading gen_preds took {0} seconds.".format(end-start))
+                    preds_loaded = True
+    
+    try:
+        return paths_info, preds
+    except NameError:
+        return None, None
 
 
 #
