@@ -76,10 +76,14 @@ cache_dir = os.path.join(dname, 'cache')
 
 
 # Hardcoding, for quicker testing
-mode = t.choose_program_mode()
+
 im_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 orig_im = Image.open(os.path.join(dep, im_name))
 out_prefix = im_name
+start_coord = (60,200,0)
+end_coords = [(120,400,0)]
+end_coords_ll = [end_coords]
+should_draw_neighbors = False
 ## User-input values
 #mode = t.choose_program_mode()
 #im_name, orig_im = t.get_image()
@@ -91,25 +95,26 @@ out_prefix = im_name
 #start_coord = end_coords.pop(0)
 #
 
-start_coord, end_coords = t.get_coords(mode)
 
-should_draw_neighbors = t.prompt_user_about_neighbors()
-
-if should_draw_neighbors:
-    end_coords_ll = t.make_neighbor_ll(end_coords)
-else:
-    end_coords_ll = []
-    for ec in end_coords:
-        end_coords_ll.append([ec]) #wrapper for path overlaying process in __main__
-    
-
+#### UI Calls ####
 #
-#if mode == MULTI:
-#    for coord in end_coords:
-#        end_coords_ll.append(G.generate_neighbor_coords(coord, *orig_im.size).append(coord))
-#elif mode == SINGLE:
-#    for coord in end_coords:
-#        end_coords_ll.append(coord)
+#mode = t.choose_program_mode()
+#im_name, orig_im = t.get_image()
+#out_prefix = im_name
+#start_coord, end_coords = t.get_coords(mode)
+#
+#should_draw_neighbors = t.prompt_user_about_neighbors()
+#
+#if should_draw_neighbors:
+#    end_coords_ll = t.make_neighbor_ll(end_coords)
+#else:
+#    end_coords_ll = []
+#    for ec in end_coords:
+#        end_coords_ll.append([ec]) #wrapper for path overlaying process in __main__
+#    
+
+
+
 
 
 aniso_map = t.load_map()

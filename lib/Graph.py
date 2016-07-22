@@ -14,9 +14,10 @@ Created on Wed Jul 13 14:14:18 2016
 import numpy as np
 from collections import defaultdict
 import math
-from lib import tools as t
-from lib import globe as g
+#from lib import tools as t
+#from lib import globe as g
 import time
+import pdb
 
 from collections import deque
 
@@ -32,17 +33,28 @@ discriminant_dist = 2
 
 class Node: # Node will be 
     def __init__(self, data, x, y, z = 0):
-        self.coords = (x,y,z) #unique ID for Node -- ensures each Node is different
+        self.coord = (x,y,z) #unique ID for Node -- ensures each Node is different
         #self.id = self.coords
         self.orientation = data[0]
         self.coherence = data[1]
         self.energy = data[2]
     
-    def info(self):
-        print("Coords: " + str(self.coords))
-        print("Orientation: " + str(self.orientation))
-        print("Coherence: " + str(self.coherence))
-        print("Energy: " + str(self.energy))
+    def __str__(self):
+#        info = []
+#        info.append("Coords: {0}".format(self.coords))
+#        info.append("Orientation: {}".format(self.orientation))
+#        info.append("Coherence: {}".format(self.coherence))
+#        info.append("Energy: {}".format(self.energy))
+#        return '\n'.join(info)
+        info = "Coord: {0}\nOrientation: {1}\nCoherence: {2}\nEnergy: {3}".format(self.coord, self.orientation, self.coherence, self.energy)
+        return info
+#        print("Coords: " + str(self.coords))
+#        print("Orientation: " + str(self.orientation))
+#        print("Coherence: " + str(self.coherence))
+#        print("Energy: " + str(self.energy))
+        
+    def __repr__(self):
+        return self.__str__()
 
     #for comparisons of attributes
     def __eq__(self, other):
@@ -55,7 +67,7 @@ class Node: # Node will be
         return not self.__eq__(other)
         
     def __key(self):
-        return (self.coords, self.orientation, self.coherence, self.energy)
+        return (self.coord, self.orientation, self.coherence, self.energy)
 
     def __hash__(self):
         return hash(self.__key())
@@ -77,7 +89,7 @@ class Graph:
     def __init__(self):
         self.nodes = set()
         self.edges = defaultdict(list) #key = from_node, values = to_node(s)
-#        self.costs = {}
+        self.costs = {}
         self.coord2node = {}
     
     def populate(self, data):
@@ -87,15 +99,19 @@ class Graph:
         self.nodes.add(n)
 
     def add_edge(self, a, b):
-        if b not in self.edges[a]:
-            self.edges[a].append(b)
-        if a not in self.edges[b]:
-            self.edges[b].append(a) #bidirectional
+        if b.coord not in self.edges[a.coord]:
+            self.edges[a.coord].append(b.coord)
+        if a.coord not in self.edges[b.coord]:
+            self.edges[b.coord].append(a.coord) #bidirectional
+            
+        cur_cost = cost(a,b)
+        self.costs[(a.coord,b.coord)] = cur_cost
+        self.costs[(b.coord,a.coord)] = cur_cost
         
 #        cur_cost = cost(a,b)
 #        self.costs[(a,b)] = cur_cost
 #        self.costs[(b,a)] = cur_cost
-    
+#    
     def create_adjacency_matrix(self, data):
         """ Create adjacency list for a Graph. Simple case for image. """
         bounds = tuple(reversed(data.shape[:-1]))
@@ -126,14 +142,14 @@ class Graph:
         
         
     def is_connected(self,a,b):
-        return (a in self.edges[b])
+        #return (a in self.edges[b])
         
         # Below implementation requires a baked-in costs dictionary
-#        try:
-#            self.costs[(a,b)] #does an entry for its cost exist?
-#            return True
-#        except KeyError: #no associated cost --> not connected
-#            return False
+        try:
+            self.costs[(a.coord,b.coord)] #does an entry for its cost exist?
+            return True
+        except KeyError: #no associated cost --> not connected
+            return False
         
         
 #        for i in ind:
@@ -225,7 +241,8 @@ def access_coords(coords, data):
     return data[tuple(reversed(coords))] #dimensions are accessed 'backwards'
 
 
-epsilon = 0.001
+EPSILON = 0.01
+PENALTY_COST = 10000000
 
 def cost(a,b):
     """ Given two adjacent Nodes, calculate the weight (determined by relative anisotropies, coherences, and energies). """
@@ -236,10 +253,10 @@ def cost(a,b):
     #dtheta = abs(b[vals_dict['ori']] - a[vals_dict['ori']]) #change in angle
     #thought process is that traversal along similar orientation is less costly
     
-    if a.energy + b.energy > epsilon:
-        result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy)
+    if (a.energy + b.energy)/2 > EPSILON:
+        result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy) #bounded within [0,1]
     else:
-        #result = 100000000 # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
+        #result = PENALTY_COST # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
         result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
         
     if math.isnan(result):
@@ -265,40 +282,67 @@ def Dijkstra(graph, start, end = None):
  
  
     total_nodes = len(graph.nodes)
-    settled = {start: 0}
+    settled = {start.coord: 0}
     v_unsettled = {} #visited but unsettled Nodes
-    pred = {start.coords: None} #dictionary of predecessors
-    processing_queue = deque([start])
+    pred = {start.coord: None} #dictionary of predecessors
+    processing_queue = deque([start.coord])
     start = time.clock()
     num_notices = 0
     
     while len(settled) < total_nodes:
+
+        
         dt = time.clock() - start
         if dt > (num_notices+1) * 10:
-            "{0} seconds have passed since starting Dijkstra's algorithm. Currently, {1} out of {2} Nodes have been settled.".format(dt, len(settled), total_nodes)
+            print("{0} seconds have passed since starting Dijkstra's algorithm. Currently, {1} out of {2} Nodes have been settled.".format(int(dt), len(settled), total_nodes))
             num_notices += 1
         
         while len(v_unsettled) == 0:
-            try:
-                current_node = processing_queue.popleft()
-            except IndexError:
-                print('Processing_queue was empty!')
-                
-            current_min_cost = settled[current_node]
+#            try:
+            cur_coord = processing_queue.popleft()
+#            current_node = graph.coord2node[cur_coord]
+            #current_node = processing_queue.popleft()
+#            except IndexError:
+#                print('Processing_queue was empty!')
+
+#            if cur_coord == (36,312,0): #still looks OK
+#                pdb.set_trace()
+#            elif cur_coord == (37,317,0): #start of straight-line
+#                pdb.set_trace()
+#            elif cur_coord == (51,331,0): #middle of straight-line
+#                pdb.set_trace()
+
+#            if current_node.coord == (36,312,0): #still looks OK
+#                pdb.set_trace()
+#            if current_node.coord == (37,317,0): #start of straight-line
+#                pdb.set_trace()
+#            if current_node.coord == (51,331,0): #middle of straight-line
+#                pdb.set_trace()
+            
+            current_min_cost = settled[cur_coord]
+            #current_min_cost = settled[current_node.coord]
             
             #update Nodes with potentially new lower min costs
-            for node in graph.edges[current_node]:
-                additional_cost = cost(current_node, node)                
-                #additional_cost = graph.costs[(current_node, node)]
+            for coord in graph.edges[cur_coord]:
+            #for coord in graph.edges[current_node.coord]:
+                #node = graph.coord2node[coord]
+                #additional_cost = cost(current_node, node)      
+                additional_cost = graph.costs[(cur_coord, coord)]
+                #additional_cost = graph.costs[(current_node.coord, node.coord)]
                 new_cost = current_min_cost + additional_cost
-                if node not in settled:
-                    if node not in v_unsettled: #first visit of Node
-                        v_unsettled[node] = new_cost
-                        pred[node.coords] = current_node.coords
-                    else: #update cost if lower
-                        if new_cost < v_unsettled[node]:
-                            v_unsettled[node] = new_cost
-                            pred[node.coords] = current_node.coords
+                if coord not in settled:
+                    if coord not in v_unsettled\
+                    or new_cost < v_unsettled[coord]: #first visit of Node corresponding to coord; or new cost is lower
+                        v_unsettled[coord] = new_cost
+                        pred[coord] = cur_coord
+#                if node not in settled:
+#                    if node not in v_unsettled: #first visit of Node
+#                        v_unsettled[node.coord] = new_cost
+#                        pred[node.coord] = current_node.coord
+#                    else: #update cost if lower
+#                        if new_cost < v_unsettled[node]:
+#                            v_unsettled[node.coord] = new_cost.coord
+#                            pred[node.coord] = current_node.coord
             
 #        if len(v_unsettled) == 0:
 #            break #nothing left visited but unsettled!

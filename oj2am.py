@@ -75,20 +75,22 @@ def mat2path(image_name, start_coord, end_coord, gen_paths_info = None, gen_pred
     preds_loaded = False
         
     
-    # there was no general cache. But let's see if there's specific cache
-    for fname in os.listdir(g.cache_dir):
-        if paths_info_loaded and preds_loaded:
-            #specific_cache_loaded = True
-            break
-        with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
-            if g.out_prefix in fname and str(g.start_coord) in fname and str(end_coord) in fname: #specific route has already been asked for
-                if not paths_info_loaded and 'paths_info' in fname:
-                    paths_info = pickle.load(inf)
-                    paths_info_loaded = True
-                if not preds_loaded and 'preds' in fname:
-                    preds = pickle.load(inf)
-                    preds_loaded = True
-    
+#    # there was no general cache.
+#    # But let's see if there's specific cache
+#    for fname in os.listdir(g.cache_dir):
+#        if paths_info_loaded and preds_loaded:
+#            #specific_cache_loaded = True
+#            print('Loaded cache for specific chosen path.')
+#            break
+#        with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
+#            if g.out_prefix in fname and str(g.start_coord) in fname and str(end_coord) in fname: #specific route has already been asked for
+#                if not paths_info_loaded and 'paths_info' in fname:
+#                    paths_info = pickle.load(inf)
+#                    paths_info_loaded = True
+#                if not preds_loaded and 'preds' in fname:
+#                    preds = pickle.load(inf)
+#                    preds_loaded = True
+#    
 
     
     

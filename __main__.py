@@ -5,6 +5,7 @@ Created on Tue Jul 19 16:13:34 2016
 @author: David G. Khachatrian
 """
 
+# python -WError -m pdb <__main__.py>   ## to stop at Warnings
 
 
 #### To ensure the working directory starts at where the script is located...
@@ -21,7 +22,7 @@ os.chdir(dname)
 from lib import globe as g
 from lib import tools as t
 import oj2am as o
-from PIL import Image
+#from PIL import Image
 
 
 # create directories if necessary
@@ -47,9 +48,9 @@ paths_lll = [] #will contain a list of paths_ll's
 
 gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
 
-if len(g.end_coords) > 1:
-    o.mat2path(g.im_name, g.start_coord, None, gen_paths_info, gen_preds) #run Dijkstra's algorithm on entire image and cache results so we don't have to redo for each endpoint
-    #gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
+if len(g.end_coords) > 1 and (gen_paths_info is None and gen_preds is None):
+    o.mat2path(g.im_name, g.start_coord, None) #run Dijkstra's algorithm on entire image and cache results so we don't have to redo for each endpoint
+    gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
 
 for end_coord_list in g.end_coords_ll:
     paths_ll = []
