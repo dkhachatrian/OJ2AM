@@ -318,42 +318,43 @@ def load_map():
     aniso_map_fname = '{0} aniso_map.p'.format(g.out_prefix)
     aniso_map_path = os.path.join(g.cache_dir, aniso_map_fname)
 
+#
+#    if aniso_map_fname in os.listdir(g.cache_dir):
+#        pass
+#        with open(os.path.join(g.cache_dir, aniso_map_fname), 'rb') as inf:
+#            start = time.clock()
+#            aniso_map = pickle.load(inf)
+#            end = time.clock()
+#            print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+##                
+##        for poss_path in g.aniso_map_paths:
+##            try:
+##                type(aniso_map)
+##                break
+##            except NameError:
+##                if os.path.lexists(poss_path): 
+##                    with open(poss_path, 'rb') as inf:
+##                        start = time.clock()
+##                        aniso_map = pickle.load(inf)
+##                        end = time.clock()
+##                        print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+##                
+#    
+#    else:
+    # ask for input data
+    graph_data = get_data()
+    # build graph
+    aniso_map = G.Graph()
+    start = time.clock()
+    aniso_map.populate(graph_data)
+    end = time.clock()
+    print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
 
-    if aniso_map_fname in os.listdir(g.cache_dir):
-        with open(os.path.join(g.cache_dir, aniso_map_fname), 'rb') as inf:
-            start = time.clock()
-            aniso_map = pickle.load(inf)
-            end = time.clock()
-            print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
-#                
-#        for poss_path in g.aniso_map_paths:
-#            try:
-#                type(aniso_map)
-#                break
-#            except NameError:
-#                if os.path.lexists(poss_path): 
-#                    with open(poss_path, 'rb') as inf:
-#                        start = time.clock()
-#                        aniso_map = pickle.load(inf)
-#                        end = time.clock()
-#                        print('Loading a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
-#                
+
+    #save maps made of particular images
     
-    else:
-        # ask for input data
-        graph_data = get_data()
-        # build graph
-        aniso_map = G.Graph()
-        start = time.clock()
-        aniso_map.populate(graph_data)
-        end = time.clock()
-        print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
-    
-    
-        #save maps made of particular images
-        
-        with open(aniso_map_path, 'wb') as outf:
-            pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
+    with open(aniso_map_path, 'wb') as outf:
+        pickle.dump(aniso_map, outf, pickle.HIGHEST_PROTOCOL)
 
     return aniso_map
 

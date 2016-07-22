@@ -241,7 +241,7 @@ def access_coords(coords, data):
     return data[tuple(reversed(coords))] #dimensions are accessed 'backwards'
 
 
-EPSILON = 0.01
+EPSILON = 0.1
 PENALTY_COST = 10000000
 
 def cost(a,b):
@@ -256,8 +256,8 @@ def cost(a,b):
     if (a.energy + b.energy)/2 > EPSILON:
         result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy) #bounded within [0,1]
     else:
-        #result = PENALTY_COST # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
-        result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
+        result = PENALTY_COST # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
+        #result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
         
     if math.isnan(result):
         print('Got NaN as a cost! Welp...')

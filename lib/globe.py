@@ -81,7 +81,7 @@ im_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 orig_im = Image.open(os.path.join(dep, im_name))
 out_prefix = im_name
 start_coord = (60,200,0)
-end_coords = [(120,400,0)]
+end_coords = [(120,350,0)]
 end_coords_ll = [end_coords]
 should_draw_neighbors = False
 ## User-input values
