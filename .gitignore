@@ -5,3 +5,5 @@
 *cache/*
 *dependencies/*
 *.DS_Store
+*.jpg
+*.png
