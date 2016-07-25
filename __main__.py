@@ -49,7 +49,7 @@ gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.st
 
 if len(g.end_coords) > 1:
     o.mat2path(g.im_name, g.start_coord, None, gen_paths_info, gen_preds) #run Dijkstra's algorithm on entire image and cache results so we don't have to redo for each endpoint
-    #gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
+    gen_paths_info, gen_preds = t.load_general_solution(g.im_name, root_coord = g.start_coord)
 
 for end_coord_list in g.end_coords_ll:
     paths_ll = []

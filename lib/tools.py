@@ -316,7 +316,7 @@ def load_map():
     
     ## Map Cache filenames
     aniso_map_fname = '{0} aniso_map.p'.format(g.out_prefix)
-    aniso_map_path = os.path.join(cache_dir, aniso_map_fname)
+    aniso_map_path = os.path.join(g.cache_dir, aniso_map_fname)
 
 
     if aniso_map_fname in os.listdir(g.cache_dir):
