@@ -22,6 +22,7 @@ os.chdir(dname)
 from lib import globe as g
 from lib import tools as t
 import oj2am as o
+import pdb
 #from PIL import Image
 
 
@@ -60,7 +61,8 @@ for end_coord_list in g.end_coords_ll:
 
 overlay = g.orig_im.copy()
 
-should_save_paths = t.prompt_saving_paths()
+#should_save_paths = t.prompt_saving_paths()
+should_save_paths = True
 
 # TODO: fix colors...
 
@@ -69,6 +71,7 @@ for i,paths_ll in enumerate(paths_lll):
         overlay = t.draw_paths_onto_image(overlay, paths_ll, save_paths = should_save_paths, color = g.path_colors[i])
     except IndexError: #g.path_colors ran out. Default to yellow
         overlay = t.draw_paths_onto_image(overlay, paths_ll, save_paths = should_save_paths, color = 'yellow')
+
 
 t.prompt_saving_overlay_to_file(overlay, start = g.start_coord, end = g.end_coords)
 

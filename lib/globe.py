@@ -16,10 +16,12 @@ dep = os.path.join(dname, 'dependencies')
 os.chdir(dname)
 ####
 
+#from lib import tools as t
+#from lib import Graph as G
 from lib import tools as t
-from lib import Graph as G
 from PIL import Image
 import sys
+import pdb
 
 
 
@@ -80,8 +82,8 @@ cache_dir = os.path.join(dname, 'cache')
 im_name = 'Pair2_NSC008_M6_DiI_aligned_cropped_falsecolor.jpg'
 orig_im = Image.open(os.path.join(dep, im_name))
 out_prefix = im_name
-start_coord = (60,200,0)
-end_coords = [(120,350,0)]
+start_coord = (50,400,0)
+end_coords = [(400,50,0)]
 end_coords_ll = [end_coords]
 should_draw_neighbors = False
 ## User-input values
@@ -119,7 +121,7 @@ should_draw_neighbors = False
 
 aniso_map = t.load_map()
 
-
+#pdb.set_trace()
 
 
 #aniso_map_paths = []

@@ -179,15 +179,23 @@ def get_data():
 
 
     while len(data_list) < 3:
-        file_name = input("Please state the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest, or enter nothing to quit: \n")        
-        while not os.path.isfile(os.path.join(g.dep, file_name)):
-            if file_name == '':
-                sys.exit()
-            file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
-        with open(os.path.join(g.dep, file_name), 'r') as inf:
-            d_layer = np.loadtxt(inf, delimiter = '\t')
-            #d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
-            data_list.append(d_layer) #delimiter for Text Images is tab
+#        file_name = input("Please state the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest, or enter nothing to quit: \n")        
+#        while not os.path.isfile(os.path.join(g.dep, file_name)):
+#            if file_name == '':
+#                sys.exit()
+#            file_name = input("File not found! Please check the spelling of the filename input. Re-enter the name of the file corresponding to the " + str(data_names[len(data_list)]) + " for the image of interest (or enter nothing to quit): \n")
+#        with open(os.path.join(g.dep, file_name), 'r') as inf:
+#            d_layer = np.loadtxt(inf, delimiter = '\t')
+#            #d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
+#            data_list.append(d_layer) #delimiter for Text Images is tab
+    
+        # hardcoding, for debugging
+        for file_name in ['o.txt','c.txt','e.txt']:
+            with open(os.path.join(g.dep, file_name), 'r') as inf:
+                d_layer = np.loadtxt(inf, delimiter = '\t')
+                #d_layer = np.around(d_layer, decimals = 3) #rarely are more than 3 decimal places needed -- just takes more time and space when left unrounded...
+                data_list.append(d_layer) #delimiter for Text Images is tab
+            
 
     #stack arrays
 
@@ -263,7 +271,8 @@ def prompt_saving_overlay_to_file(overlay, start, end):
     """
     """
     
-    should_overlay = input('Would you like the optimized path(s) to be overlaid over the original image? (Y/N):\n')
+    #should_overlay = input('Would you like the optimized path(s) to be overlaid over the original image? (Y/N):\n')
+    should_overlay = 'y'
     if should_overlay.lower() == 'y':
         # TODO: should change behavior depending on mode? Don't think it's necessary...
         path_im_fname = '{0} start={1} end={2} draw_neighbors={3} overlay.jpg'.format(g.out_prefix, start, end, g.should_draw_neighbors)
@@ -341,6 +350,16 @@ def load_map():
 ##                
 #    
 #    else:
+#        # ask for input data
+#        graph_data = get_data()
+#        # build graph
+#        aniso_map = G.Graph()
+#        start = time.clock()
+#        aniso_map.populate(graph_data)
+#        end = time.clock()
+#        print('Creating a map with {0} Nodes took {1} seconds.'.format(len(aniso_map.nodes), end-start))
+#    
+    
     # ask for input data
     graph_data = get_data()
     # build graph
@@ -363,34 +382,36 @@ def load_general_solution(im_name, root_coord):
     Loads general solutions to the Graph corresponding to im_name starting/ending at root_coord, if it exists.
     Returns loaded data if exists in the order (paths_info,preds). Else returns (None, None)
     """
+#    
+#    paths_info_loaded = False
+#    preds_loaded = False
+#    
+#    
+#    for fname in os.listdir(g.cache_dir):
+#        if paths_info_loaded and preds_loaded:
+#            #specific_cache_loaded = True
+#            break
+#        with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
+#            if g.out_prefix in fname and str(None) in fname and str(root_coord) in fname:
+#                if not paths_info_loaded and 'paths_info' in fname:
+#                    start = time.clock()
+#                    paths_info = pickle.load(inf)
+#                    end = time.clock()
+#                    print("Loading gen_paths_info took {0} seconds.".format(end-start))
+#                    paths_info_loaded = True
+#                if not preds_loaded and 'preds' in fname:
+#                    start = time.clock()
+#                    preds = pickle.load(inf)
+#                    end = time.clock()
+#                    print("Loading gen_preds took {0} seconds.".format(end-start))
+#                    preds_loaded = True
+#    
+#    try:
+#        return paths_info, preds
+#    except NameError:
+#        return None, None
     
-    paths_info_loaded = False
-    preds_loaded = False
-    
-    
-    for fname in os.listdir(g.cache_dir):
-        if paths_info_loaded and preds_loaded:
-            #specific_cache_loaded = True
-            break
-        with open(os.path.join(g.cache_dir,fname), 'rb') as inf:
-            if g.out_prefix in fname and str(None) in fname and str(root_coord) in fname:
-                if not paths_info_loaded and 'paths_info' in fname:
-                    start = time.clock()
-                    paths_info = pickle.load(inf)
-                    end = time.clock()
-                    print("Loading gen_paths_info took {0} seconds.".format(end-start))
-                    paths_info_loaded = True
-                if not preds_loaded and 'preds' in fname:
-                    start = time.clock()
-                    preds = pickle.load(inf)
-                    end = time.clock()
-                    print("Loading gen_preds took {0} seconds.".format(end-start))
-                    preds_loaded = True
-    
-    try:
-        return paths_info, preds
-    except NameError:
-        return None, None
+    return None, None
 
 
 #

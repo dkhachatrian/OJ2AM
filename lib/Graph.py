@@ -19,6 +19,8 @@ import math
 import time
 import pdb
 
+import pickle
+
 from collections import deque
 
 discriminant_dist = 2
@@ -244,6 +246,8 @@ def access_coords(coords, data):
 EPSILON = 0.1
 PENALTY_COST = 10000000
 
+import random
+
 def cost(a,b):
     """ Given two adjacent Nodes, calculate the weight (determined by relative anisotropies, coherences, and energies). """
 #    kappa = 1 #coherence parameter
@@ -253,19 +257,66 @@ def cost(a,b):
     #dtheta = abs(b[vals_dict['ori']] - a[vals_dict['ori']]) #change in angle
     #thought process is that traversal along similar orientation is less costly
     
-    if (a.energy + b.energy)/2 > EPSILON:
-        result = (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy) #bounded within [0,1]
+    ax = a.coord[0]
+    ay = a.coord[1]
+
+    if (ax > 100 or ax < 700) and (ay > 110):
+        return PENALTY_COST
     else:
-        result = PENALTY_COST # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
-        #result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
-        
-    if math.isnan(result):
-        print('Got NaN as a cost! Welp...')
-    else:
-        return result
+        return random.randint(0,100)
+    
+#    return random.randint(0, 100000)
+#    movement_angle = get_angle(a,b)
+#    dtheta = abs(a.orientation - movement_angle)
+#    if dtheta > math.pi/2:
+#        dtheta = math.pi - dtheta
+#    theta_factor = (dtheta / (math.pi/2))**2
+#    # bounded between 0 and 1
+#    # 1 ==> lines spanned by movement_angle vector and orientation vector are orthogonal
+#    # 0 ==> lines spanned by movement_angle vector and orientation vector are the same
+#    # the thought is: the more along the orientation vector the movement is, the lower the cost
+#    
+#    
+#    if (a.energy + b.energy)/2 > EPSILON:
+#        result = theta_factor * (a.energy*(1-a.coherence) + b.energy*(1-b.coherence)) / (a.energy + b.energy) #bounded within [0,1]
+#    else:
+#        result = PENALTY_COST # try to prevent movement across areas with low/no energy (and so essentially isotropic areas)
+#        #result = ((1-a.coherence) + (1-b.coherence))/2 #limit as energies approach zero
+#        
+##    if math.isnan(result):
+##        print('Got NaN as a cost! Welp...')
+##    else:
+##        return result
+#    return result
 
 
-
+def get_angle(a,b):
+    """ Given two Nodes with coordinates, return the angle made by their adjoining line segment with the horizontal.
+    Bounded in [-pi/2, pi/2] to match bounds of structure tensor orientation.
+    Currently only working from 2D vectors. (3D support will cost time.)"""
+    
+    #2D implementation
+    tup = np.subtract(a.coord, b.coord)
+    return math.atan(tup[1]/tup[0]) #arctan(y/x)
+    
+    
+#    
+#    tup = np.subtract(a.coord, b.coord)
+#    np.angle()
+#
+#
+##rotation matrix
+#
+#from numpy import cross, eye, dot
+#from scipy.linalg import expm3, norm
+#
+#def M(axis, theta):
+#    """ Return the rotational matrix along axis by angle theta.
+#    From http://stackoverflow.com/questions/6802577/python-rotation-of-3d-vector """
+##    Let a be the unit vector along axis, i.e. a = axis/norm(axis)
+##and A = I × a be the skew-symmetric matrix associated to a, i.e. the cross product of the identity matrix with a
+##Then M = exp(θ A) is the rotation matrix.
+#    return expm3(cross(eye(3), axis/norm(axis)*theta))
 
 
 ###############################################
@@ -288,6 +339,11 @@ def Dijkstra(graph, start, end = None):
     processing_queue = deque([start.coord])
     start = time.clock()
     num_notices = 0
+    
+
+    # logging purposes
+    lens_of_newly_settled = []    
+    
     
     while len(settled) < total_nodes:
 
@@ -349,23 +405,42 @@ def Dijkstra(graph, start, end = None):
         
         #find any newly settled Nodes
         min_v = min(v_unsettled.values())
-        newly_settled = [n for n in v_unsettled if v_unsettled[n] == min_v]
+
+#        #even if more than one Node has reached a minimum, will only settle one...
+#        for c in v_unsettled:
+#            if v_unsettled[c] == min_v:
+#                settled[c] = v_unsettled[c]
+#                pred[c] = cur_coord
+#                v_unsettled.pop(c)
+#                processing_queue.append(c)
+#                break
         
-        for n in newly_settled:
+        newly_settled = [n for n in v_unsettled if v_unsettled[n] == min_v]
+        lens_of_newly_settled.append(len(newly_settled)) #logging/debugging
+
+#        for x in random.randrange(len(newly_settled)): # so there isn't a preference for the upper-left corner (?)
+#            c = newly_settled[x]
+#        random.shuffle(newly_settled) #so there isn't a preference for the upper-left corner (?)
+        for c in newly_settled:
+        
+#        for c in newly_settled:
 #            if len(newly_settled) > 1:
+#                pdb.set_trace()
 #                print('Bifurcation in optimal path.')
-            settled[n] = v_unsettled[n] #v_settled[n] == min_v (at least, should be)
+            settled[c] = v_unsettled[c] #v_settled[n] == min_v (at least, should be)
 
             
             #pred[n] = current_node
-            v_unsettled.pop(n) #remove from dictionary whose costs are compared to find new mins
-            processing_queue.append(n) #add to queue of settled nodes whose neighbors should be updated
+            v_unsettled.pop(c) #remove from dictionary whose costs are compared to find new mins
+            processing_queue.append(c) #add to queue of settled nodes whose neighbors should be updated
         
         #get out if we reached a specified end Node.
         # Note: if done this way, cannot arbitrarily choose any end Node afterward
         if end in newly_settled:
+#        if end in settled:
             break
         
+#    pdb.set_trace()
     return settled, pred    
 
 

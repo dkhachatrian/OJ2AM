@@ -13,6 +13,7 @@ import numpy as np
 from PIL import Image
 from matplotlib import colors as c
 from lib import Graph as G
+import pdb
 
 
 def get_path_from_image(im):
@@ -27,9 +28,12 @@ def get_path_from_image(im):
     coords = []
     
     index = np.ndindex(im_data.shape[:-1])
+    #pdb.set_trace()
     
     for ind in index:
-        if im_data[ind] == marker:
+        if np.array_equal(im_data[ind], marker):
+        #if tuple(im_data[ind]) == marker:
+        #if tuple(im_data[ind]) != [1.0,1.0,1.0]:
             ind = tuple(reversed(ind)) #there's a flipping of dimension order between array and image...
             if len(ind) == 2:
                 ind = (*ind, 0)
